@@ -1,6 +1,8 @@
 # ResiScope
 
-电阻曲线预览、编辑与导出工具，单 HTML 文件运行。本仓库保存基于原项目修改的版本。
+https://0212xx.github.io/ResiScope/ResiScope.html
+电阻曲线预览、编辑与导出工具。
+在原项目[chengzhiyaoguoli/self-developed-tools — ResiScope](https://github.com/chengzhiyaoguoli/self-developed-tools/tree/main/research-lab/ResiScope)基础上增加了坐标轴拉伸压缩与csv文件导出功能。
 
 ## 使用方法
 
