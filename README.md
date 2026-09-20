@@ -21,8 +21,6 @@ CSV 使用 UTF-8 BOM 编码，便于在 Excel 中打开中文内容。
 
 ## 来源与说明
 
-原项目：[chengzhiyaoguoli/self-developed-tools — ResiScope](https://github.com/chengzhiyaoguoli/self-developed-tools/tree/main/research-lab/ResiScope)。页面保留原作者「橙汁」署名。
+原项目：[chengzhiyaoguoli/self-developed-tools — ResiScope](https://github.com/chengzhiyaoguoli/self-developed-tools/tree/main/research-lab/ResiScope)。
 
-此版本包含界面、CSV 导出及图表交互调整，不代表原作者发布的正式版本。本仓库未另行授予原项目代码许可；使用或再分发时请核实原项目的许可条件。
-
-处理结果应结合实验记录核验；避免过度滤波或选择性删除数据。上传本仓库不等于已完成全部浏览器兼容性与数据处理测试。
+此版本包含界面、CSV 导出及图表交互调整。
