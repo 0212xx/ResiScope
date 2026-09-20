@@ -1,0 +1,1778 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ResiScope</title>
+
+
+
+
+<script>
+// Restore before first paint; unavailable storage falls back to the original palette.
+try {const theme=localStorage.getItem('resiscope.theme.v1');document.documentElement.dataset.theme=['pink','blue','sage','sand','slate','lavender'].includes(theme)?theme:'pink';}
+catch {document.documentElement.dataset.theme='pink';}
+</script>
+<style id="resiscope-ui">
+:root {
+  --shell: #d8f3ff;
+  --shell-blue: #ebe8ff;
+  --panel: rgba(255, 255, 255, 0.64);
+  --panel-solid: #fbfdff;
+  --ink: #29344d;
+  --ink-soft: #59647a;
+  --muted: #626e82;
+  --line: rgba(145, 164, 196, 0.46);
+  --line-blue: rgba(137, 160, 203, 0.48);
+  --teal: #4caec1;
+  --teal-dark: #377f9f;
+  --blue: #6b94e3;
+  --violet: #9389e8;
+  --coral: #e98da6;
+  --amber: #c38f3a;
+  --mint: #dcf6ee;
+  --sky: #e2f2ff;
+  --peach: #ffe8ef;
+  --shadow-sm: 0 6px 18px rgba(77, 93, 147, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --shadow-md: 0 16px 40px rgba(73, 87, 143, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --header-h: 70px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  width: var(--app-w, 100vw);
+  height: var(--app-h, 100dvh);
+  max-width: 100vw;
+  max-height: 100dvh;
+  color: var(--ink);
+  font-family: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", Arial, sans-serif;
+  background: linear-gradient(115deg, #c9efff 0%, #dff3ff 25%, #ece8ff 58%, #ffdde8 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+  background:
+    linear-gradient(138deg, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0.08) 34%, transparent 62%),
+    linear-gradient(90deg, rgba(104, 205, 235, 0.12), rgba(157, 145, 231, 0.06) 52%, rgba(242, 141, 173, 0.14));
+}
+
+input,
+select,
+button { font: inherit; }
+
+input[type="number"],
+input[type="text"],
+select {
+  width: 100%;
+  height: 32px;
+  padding: 0 9px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(154, 172, 203, 0.58);
+  border-radius: 6px;
+  outline: none;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus,
+select:focus {
+  border-color: #879ee4;
+  box-shadow: 0 0 0 3px rgba(117, 135, 218, 0.14), 0 5px 16px rgba(93, 109, 173, 0.09);
+}
+
+input:disabled,
+select:disabled {
+  color: #8b9b97;
+  background: rgba(235, 239, 247, 0.72);
+}
+
+button {
+  height: 32px;
+  padding: 0 11px;
+  color: #44506a;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(151, 170, 201, 0.56);
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(74, 91, 145, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s, box-shadow 0.14s, transform 0.14s;
+}
+
+button:hover:not(:disabled) {
+  color: #303c58;
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #9cabe0;
+  box-shadow: 0 6px 16px rgba(83, 98, 160, 0.12);
+}
+
+button:active:not(:disabled) { transform: translateY(1px); }
+
+button:disabled {
+  color: #94a49f;
+  background: rgba(239, 242, 248, 0.7);
+  border-color: rgba(184, 194, 214, 0.48);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+button.primary,
+button.blue {
+  color: #fff;
+  border-color: transparent;
+}
+
+button.primary { background: linear-gradient(112deg, #55b7cb, #718fdc 56%, #9a86df); }
+button.blue { background: linear-gradient(112deg, #6b9ce6, #8a87e1 58%, #b282dd); }
+
+button.primary:hover:not(:disabled),
+button.blue:hover:not(:disabled) {
+  color: #fff;
+  border-color: transparent;
+  filter: brightness(0.97);
+}
+
+button.danger {
+  color: #c55470;
+  background: rgba(255, 247, 250, 0.78);
+  border-color: rgba(230, 155, 176, 0.66);
+}
+
+button.danger:hover:not(:disabled) {
+  color: #a83c58;
+  background: rgba(255, 237, 243, 0.94);
+  border-color: #de89a2;
+}
+
+.withIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.uiIcon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+/* Shared application header */
+#sharedHeader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: var(--app-w, 100vw);
+  height: var(--header-h);
+  display: grid;
+  grid-template-columns: 218px auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  background: rgba(255, 255, 255, 0.56);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: 0 8px 28px rgba(73, 88, 145, 0.1);
+  backdrop-filter: blur(18px) saturate(1.18);
+  overflow: hidden;
+}
+
+#sharedHeader::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(100deg, rgba(224, 248, 255, 0.76), rgba(242, 239, 255, 0.58) 58%, rgba(255, 231, 240, 0.66));
+}
+
+.sharedBrand {
+  min-width: 0;
+  height: var(--header-h);
+}
+
+.sharedBrand .brandBlock {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 43px minmax(0, 1fr);
+  grid-template-rows: 1fr 1fr;
+  align-items: center;
+  padding: 11px 0;
+}
+
+.sharedBrand .brandMark {
+  grid-row: 1 / 3;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  color: #6f8fdf;
+}
+
+.sharedBrand .brandMark svg { width: 34px; height: 34px; }
+
+.sharedBrand .brand {
+  grid-column: 2;
+  align-self: end;
+  margin: 0;
+  color: #2c3650;
+  font-size: 22px;
+  font-weight: 760;
+  line-height: 1;
+}
+
+.sharedBrand .sub {
+  grid-column: 2;
+  align-self: start;
+  margin: 5px 0 0;
+  color: #7b8297;
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.sharedToolSwitch,
+.directionSwitch {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 8px;
+  box-shadow: 0 7px 20px rgba(77, 93, 154, 0.09), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.sharedToolSwitch button,
+.directionSwitch button {
+  height: 36px;
+  min-width: 100px;
+  padding: 0 15px;
+  color: #606a81;
+  font-weight: 680;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.sharedToolSwitch button.active,
+.directionSwitch button.active {
+  color: #fff;
+  background: linear-gradient(112deg, #56b9d0, #718fdd 52%, #a483e0);
+  box-shadow: 0 6px 16px rgba(92, 107, 184, 0.24);
+}
+
+.sharedToolSwitch button.active:hover,
+.directionSwitch button.active:hover {
+  color: #fff;
+  background: linear-gradient(112deg, #4eacc3, #6784d2 52%, #9576d4);
+  border-color: transparent;
+}
+
+.sharedContextHost,
+.sharedActionHost,
+.sharedContext,
+.sharedActions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.sharedContextHost { overflow: hidden; }
+.sharedEditorContext { display: flex; width: 100%; }
+.sharedConverterContext { display: none; }
+.sharedEditorActions { display: flex; }
+.sharedConverterActions { display: none; }
+
+body.converter-mode .sharedEditorContext,
+body.converter-mode .sharedEditorActions { display: none; }
+
+body.converter-mode .sharedConverterContext,
+body.converter-mode .sharedConverterActions { display: flex; }
+
+.sharedEditorContext .topFileBar {
+  width: 100%;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.topFileBar .filePick { display: flex; align-items: center; flex: 0 0 auto; }
+.topFileBar .pickedName { display: none; }
+.topFileBar #file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.topFileBar #fileBtn {
+  height: 36px;
+  color: #49729b;
+  font-weight: 680;
+  background: linear-gradient(135deg, rgba(237, 251, 255, 0.86), rgba(246, 241, 255, 0.86));
+  border-color: rgba(143, 173, 211, 0.62);
+}
+
+.topFileBar #fileName {
+  flex: 1 1 220px;
+  min-width: 100px;
+  max-width: min(300px, 22vw);
+  height: 36px;
+  display: block;
+  line-height: 34px;
+  padding: 0 10px;
+  color: #576278;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(155, 173, 204, 0.5);
+  border-radius: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topFileBar #fileName.dirty { border-color: #daa55d; background: rgba(255, 248, 225, 0.84); }
+.topFieldLabel { color: #7c8397; font-size: 12px; white-space: nowrap; }
+.topFileBar #sheet { width: min(270px, 21vw); height: 36px; }
+
+.saveState {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  color: #7c570d;
+  background: #fff4c7;
+  border: 1px solid #e6bf53;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.topActions {
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.topActions #undo,
+.topActions #redo {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  gap: 0;
+  flex: 0 0 34px;
+  color: #677188;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.topActions #undo span,
+.topActions #redo span { display: none; }
+
+.toolIconButton {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  flex: 0 0 34px;
+  color: #5e70a5;
+  background: rgba(255,255,255,.62);
+  border-color: rgba(153,176,221,.62);
+}
+.toolIconButton:hover:not(:disabled),
+.toolIconButton.active { color: #fff; background: linear-gradient(112deg, #55b6ca, #6f91df 56%, #9685df); border-color: transparent; }
+.toolIconButton .uiIcon { width: 17px; height: 17px; }
+.toolIconRail { position: fixed; top: calc(var(--header-h) + 18px); right: 14px; z-index: 45; display: flex; flex-direction: column; gap: 7px; }
+.toolDrawer {
+  position: fixed;
+  top: var(--header-h);
+  right: 0;
+  z-index: 55;
+  width: min(430px, 94vw);
+  height: calc(100vh - var(--header-h));
+  padding: 12px;
+  overflow: auto;
+  background: rgba(247,250,255,.94);
+  border-left: 1px solid rgba(170,190,226,.72);
+  box-shadow: -14px 0 34px rgba(73,88,145,.16);
+  backdrop-filter: blur(18px) saturate(1.15);
+  transform: translateX(100%);
+  transition: transform .2s ease;
+}
+.toolDrawer.open { transform: none; }
+.toolDrawerHead { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+.toolDrawerHead strong { color:#35405a; font-size:15px; }
+.toolDrawerClose { width:30px; height:30px; padding:0; }
+.toolDrawerBody > .group { margin-bottom:8px; }
+.exportPopover {
+  position: fixed;
+  top: calc(var(--header-h) - 2px);
+  right: 12px;
+  z-index: 70;
+  width: 250px;
+  padding: 12px;
+  background: rgba(255,255,255,.97);
+  border: 1px solid rgba(170,190,226,.78);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(73,88,145,.2);
+}
+.exportPopover[hidden] { display:none; }
+.exportPopoverTitle { margin:0 0 9px; color:#35405a; font-size:13px; font-weight:730; }
+.exportPopover label { display:block; margin:7px 0; color:#68748d; font-size:11px; }
+.exportPopover select { width:100%; height:32px; margin-top:4px; }
+.exportPopover button { width:100%; margin-top:7px; }
+.side > .toolIconRail { position: static; width: 100%; margin: 10px 0 8px; padding: 7px; display: flex; flex-direction: column; gap: 7px; background: rgba(255,255,255,.46); border: 1px solid rgba(255,255,255,.78); border-radius: 10px; box-shadow: var(--shadow-sm); }
+.side > .toolIconRail .toolIconButton { width: 100%; height: 38px; flex: 0 0 38px; justify-content: flex-start; gap: 9px; padding: 0 12px; }
+.side > .toolIconRail .toolIconButton span { display: inline; font-size: 12px; font-weight: 650; }
+.side > .toolDrawer { position: static; width: 100%; height: auto; max-height: none; padding: 0; overflow: visible; background: transparent; border: 0; box-shadow: none; backdrop-filter: none; transform: none; }
+.side > .toolDrawer:not(.open) { display: none; }
+.side > .toolDrawer.open { transform: none; }
+.side > .toolDrawer .toolDrawerHead { display: none; }
+.side > .toolDrawerBody > .group { margin-bottom: 8px; }
+.timeScrollbar { position: absolute; left: 10%; right: 10%; bottom: 5px; z-index: 6; width: 80%; height: 14px; accent-color: var(--teal); opacity: .9; }
+.timeScrollbar:disabled { opacity: .35; }
+
+.topActions :is(#export, #exportCsv) {
+  min-width: 112px;
+  height: 38px;
+  color: #fff;
+  background: linear-gradient(112deg, #55b6ca, #6f91df 56%, #9685df);
+  border-color: transparent;
+  box-shadow: 0 7px 18px rgba(79, 100, 176, 0.2);
+}
+
+#sharedAboutBtn {
+  min-width: 72px;
+  height: 38px;
+  padding: 0 12px;
+  gap: 6px;
+  color: #5d6880;
+  background: rgba(255, 255, 255, 0.62);
+  border-color: rgba(155, 171, 201, 0.52);
+}
+
+#sharedAboutBtn .uiIcon { width: 17px; height: 17px; }
+
+.sharedConverterContext .directionSwitch button { min-width: 126px; }
+
+/* Curve editor */
+.app {
+  position: relative;
+  z-index: 1;
+  width: var(--app-w, 100vw);
+  height: var(--app-h, 100dvh);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(356px, 390px);
+  grid-template-rows: minmax(0, 1fr);
+  padding-top: var(--header-h);
+  overflow: hidden;
+}
+
+.app > .top { display: none; }
+
+.main {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 28px;
+  overflow: hidden;
+}
+
+.stage {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 40px minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px 12px 8px;
+  background: linear-gradient(135deg, rgba(226, 247, 255, 0.22), rgba(241, 235, 255, 0.18) 56%, rgba(255, 234, 242, 0.18));
+}
+
+.chartToolbar {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 3px;
+}
+
+.chartToolbarLeft,
+.chartToolbarRight {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.chartToolbarLeft { flex: 1; }
+
+.modeTabs {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 7px;
+  box-shadow: 0 5px 16px rgba(83, 96, 154, 0.08);
+}
+
+.modeBtn {
+  height: 28px;
+  min-width: 72px;
+  padding: 0 12px;
+  color: #647087;
+  font-weight: 680;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.modeBtn.active {
+  color: #fff;
+  background: linear-gradient(112deg, #58b8ce, #7192df 54%, #a182df);
+  box-shadow: 0 5px 13px rgba(84, 104, 180, 0.2);
+}
+
+.modeBtn:disabled { color: #9aa9a5; background: transparent; }
+
+.cursorReadout {
+  min-width: 210px;
+  max-width: min(520px, 42vw);
+  height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
+  color: #4e5a72;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chartToolbar #fit,
+.zeroToggle {
+  height: 32px;
+  background: rgba(255, 255, 255, 0.62);
+  border-color: rgba(151, 171, 204, 0.5);
+}
+
+.zeroToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  color: #606c84;
+  border: 1px solid rgba(151, 171, 204, 0.5);
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.zeroToggle input,
+.chOn { accent-color: var(--teal); }
+
+.plotWrap {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: rgba(252, 254, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgba(72, 87, 145, 0.14), 0 0 0 1px rgba(143, 163, 198, 0.28), inset 0 1px 0 #fff;
+}
+
+canvas { width: 100%; height: 100%; display: block; background: #fbfdff; }
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7b8498;
+  font-size: 13px;
+  line-height: 1.75;
+  text-align: center;
+  pointer-events: none;
+}
+
+.status {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  color: #647086;
+  background: rgba(255, 255, 255, 0.48);
+  border-top: 1px solid rgba(255, 255, 255, 0.7);
+  font-size: 11.5px;
+}
+
+.side {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  min-height: 0;
+  padding: 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: linear-gradient(160deg, rgba(232, 249, 255, 0.56), rgba(243, 239, 255, 0.58) 58%, rgba(255, 235, 243, 0.62));
+  border-left: 1px solid rgba(255, 255, 255, 0.76);
+  box-shadow: -14px 0 34px rgba(73, 87, 145, 0.08);
+  backdrop-filter: blur(16px) saturate(1.12);
+  scrollbar-width: thin;
+  scrollbar-color: #a9c5be transparent;
+}
+
+.sideIntro {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 2px 3px 8px;
+}
+
+.side .channelGroup > .label { font-size: 13px; }
+.channelGroup .small { font-size: 12px; }
+.channelGroup .sampleInline { font-size: 11px; }
+.channelGroup .sampleInline input { font-size: 12px; }
+.channelGroup .ch { font-size: 12px; }
+.channelGroup .chHead { font-size: 11px; }
+.channelGroup .baseInput, .channelGroup .baseBtn { font-size: 11.5px; }
+.sideIntro strong { color: #35405a; font-size: 15px; }
+.sideIntro span { color: #7e879b; font-size: 11.5px; }
+
+.side .group {
+  margin: 0 0 7px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.side .label {
+  margin: 0 0 6px;
+  color: #48536b;
+  font-size: 11.5px;
+  font-weight: 730;
+}
+
+.side .hint {
+  margin: 5px 0 0;
+  color: #7c8599;
+  font-size: 9.5px;
+  line-height: 1.35;
+}
+
+.row { display: flex; align-items: center; gap: 6px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 6px; }
+.small { height: 28px; padding: 0 8px; font-size: 11px; }
+.channelQuickRow { width: 100%; }
+.sampleInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: #68758f;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.sampleInline input {
+  width: 52px;
+  height: 28px;
+  padding: 0 5px;
+  color: #46536d;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.channelGroup {
+  background: linear-gradient(145deg, rgba(220, 246, 255, 0.7), rgba(237, 240, 255, 0.7));
+  border-color: rgba(255, 255, 255, 0.82);
+}
+
+.channels { display: flex; flex-direction: column; gap: 2px; overflow: visible; }
+
+.ch {
+  min-height: 28px;
+  display: grid;
+  grid-template-columns: 18px 12px 54px 46px minmax(88px, 1fr) 44px;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 4px;
+  color: #47536b;
+  background: rgba(255, 255, 255, 0.58);
+  border-radius: 5px;
+  font-size: 11px;
+}
+
+.ch:nth-child(odd):not(.chHead) { background: rgba(230, 243, 255, 0.64); }
+.ch:nth-child(even):not(.chHead) { background: rgba(242, 237, 255, 0.64); }
+.ch:not(.chHead):hover { background: rgba(255, 255, 255, 0.9); box-shadow: 0 6px 14px rgba(75, 91, 151, 0.1); }
+
+.chHead {
+  min-height: 23px;
+  color: #747f94;
+  background: transparent;
+  border-bottom: 1px solid rgba(139, 160, 198, 0.42);
+  border-radius: 0;
+  font-size: 10px;
+}
+
+.chHead .baseTitle { grid-column: 5 / 7; text-align: center; }
+.chHead .ptTitle,
+.ptCount { text-align: center; }
+.ptCount { color: #6c7890; font-variant-numeric: tabular-nums; }
+.sw { width: 12px; height: 12px; border-radius: 3px; }
+.baseInput,
+.baseBtn { height: 24px; font-size: 10.5px; }
+.baseInput { padding: 0 5px; }
+.baseBtn { padding: 0 5px; color: #5e70a5; }
+
+.selectionGroup { background: linear-gradient(135deg, rgba(224, 244, 255, 0.74), rgba(238, 235, 255, 0.72)); }
+.timeAdjustGroup { background: linear-gradient(135deg, rgba(226, 248, 242, 0.76), rgba(233, 242, 255, 0.74)); }
+.toolControlRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 0.85fr) 72px;
+  align-items: end;
+  gap: 8px;
+}
+.toolField { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.toolFieldLabel { color: var(--muted); font-size: 11.5px; line-height: 1.4; }
+.toolNumberField { position: relative; min-width: 0; }
+.toolNumberField input { padding-right: 30px; }
+.toolNumberField input::-webkit-inner-spin-button { margin-right: -2px; }
+.toolUnit { position: absolute; top: 50%; right: 9px; transform: translateY(-50%); color: var(--muted); font-size: 11px; pointer-events: none; }
+.toolNumberField:focus-within input { padding-right: 9px; }
+.toolNumberField:focus-within .toolUnit { display: none; }
+.toolControlRow > button { width: 100%; margin: 0; padding: 0 8px; }
+#timeAdjustHint { min-height: 16px; }
+
+.rangeBox {
+  min-height: 36px;
+  padding: 7px;
+  color: #59647b;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(151, 171, 204, 0.46);
+  border-radius: 6px;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.selectionSideActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px 32px 76px;
+  gap: 6px;
+  margin-top: 8px;
+}
+.selectionSideActions button { height: 34px; padding: 0 6px; font-size: 12px; }
+.selectionSideActions .moveButton { padding: 0; font-size: 16px; }
+
+
+.operationGroup { background: linear-gradient(135deg, rgba(229, 247, 255, 0.7), rgba(255, 233, 242, 0.72)); }
+.operationGroup .grid2 { grid-template-columns: minmax(0, 1fr); }
+.formulaLibrary {
+  margin-top: 8px;
+}
+.formulaLibrary[hidden],
+.formulaManageMenu[hidden] { display: none !important; }
+.formulaLibraryRow { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 34px); gap: 6px; }
+.formulaLibraryRow select { min-width: 0; height: 34px; font-size: 12px; }
+.formulaIconButton {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #6477a8;
+  background: rgba(255, 255, 255, 0.68);
+}
+.formulaIconButton .uiIcon { width: 14px; height: 14px; }
+.formulaIconButton.isActive { color: #fff; background: linear-gradient(112deg, #5bb8ca, #8788df); border-color: transparent; }
+.formulaManageMenu {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 6px;
+}
+.formulaManageMenu button { height: 27px; padding: 0 6px; color: #63719a; font-size: 10px; }
+.formulaHeading { display: flex; align-items: center; justify-content: space-between; }
+.formulaHeading .formulaMark { color: var(--muted); font: italic 17px Georgia, serif; font-weight: 400; }
+.formulaActionRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+.formulaActionRow .hint { margin: 0; }
+.formulaActionRow #applyOp { flex: 0 0 126px; width: auto; height: 34px; margin: 0; }
+
+
+.filterGroup { background: linear-gradient(135deg, rgba(232, 240, 255, 0.76), rgba(241, 232, 255, 0.72)); }
+.sampleGroup { background: linear-gradient(135deg, rgba(222, 248, 244, 0.72), rgba(230, 242, 255, 0.7)); }
+.sampleRow { display: grid; grid-template-columns: minmax(0, 1fr) auto 58px; gap: 5px; align-items: center; }
+.sampleRow span { color: #758096; font-size: 10px; white-space: nowrap; }
+.exportGroup { background: linear-gradient(135deg, rgba(255, 237, 243, 0.76), rgba(237, 239, 255, 0.74)); }
+.exportGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.exportGrid select { font-size: 12px; padding-left: 7px; padding-right: 3px; }
+
+/* Compact processing controls; the existing channel layout and palette stay shared. */
+.side .group:not(.channelGroup) { padding: 10px; margin-bottom: 8px; }
+.side .group:not(.channelGroup) > .label { margin-bottom: 8px; font-size: 13px; }
+.side .group:not(.channelGroup) .hint { font-size: 11px; line-height: 1.5; margin-top: 7px; }
+.side .group:not(.channelGroup) input,
+.side .group:not(.channelGroup) select { height: 34px; min-width: 0; font-size: 13px; }
+.side .group:not(.channelGroup) .formulaLibraryRow select,
+.side .group:not(.channelGroup) .exportGrid select { font-size: 12px; }
+.side .toolControlRow > button { height: 34px; font-size: 12px; gap: 4px; }
+.side .toolControlRow .uiIcon { width: 14px; height: 14px; }
+.side .formulaActionRow #applyOp { font-size: 13px; }
+.side .formulaActionRow .hint { margin-top: 0; }
+.side .formulaManageMenu button { height: 30px; font-size: 11.5px; }
+.side #operand { font-size: 15px; }
+.side .rangeBox { padding: 9px; min-height: 40px; font-size: 12px; line-height: 1.5; }
+.side .exportGrid { gap: 8px; }
+.side .exportHint { display: flex; gap: 5px; align-items: flex-start; }
+.exportHint .uiIcon { width: 13px; height: 13px; flex: 0 0 auto; margin-top: 2px; }
+.side .toolControlRow select { padding-left: 7px; padding-right: 2px; }
+
+.selPicker {
+  position: absolute;
+  z-index: 8;
+  width: 190px;
+  max-width: calc(100% - 16px);
+  max-height: 240px;
+  display: none;
+  overflow: auto;
+  padding: 7px;
+  background: rgba(252, 253, 255, 0.92);
+  border: 1px solid rgba(135, 153, 200, 0.62);
+  border-radius: 7px;
+  box-shadow: 0 18px 42px rgba(69, 82, 143, 0.2);
+  backdrop-filter: blur(14px);
+}
+
+.selPickerHead { display: flex; align-items: center; justify-content: space-between; padding: 2px 3px 6px; color: #46526c; font-size: 11.5px; border-bottom: 1px solid rgba(151, 169, 201, 0.38); }
+.selPickerClose { width: 24px; height: 24px; padding: 0; border: 0; background: transparent; font-size: 17px; }
+.selOption { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 5px; color: #4b566e; border-radius: 5px; font-size: 12px; cursor: pointer; }
+.selOption:hover { background: rgba(231, 238, 255, 0.82); }
+.selOptionSwatch { width: 11px; height: 11px; border-radius: 3px; }
+.selAll { margin-top: 4px; color: #6679b1; font-weight: 650; border-bottom: 1px solid rgba(155, 173, 202, 0.32); }
+
+.toast,
+.cvToast {
+  position: fixed;
+  right: 20px;
+  z-index: 70;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 10px 13px;
+  color: #fff;
+  background: linear-gradient(112deg, rgba(76, 91, 132, 0.96), rgba(105, 91, 151, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 7px;
+  box-shadow: 0 14px 34px rgba(58, 68, 118, 0.24);
+  font-size: 12px;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.toast { top: calc(var(--header-h) + 18px); bottom: auto; }
+.cvToast { bottom: 42px; }
+.toast.show,
+.cvToast.show { opacity: 1; transform: none; }
+
+.modal {
+  position: fixed;
+  top: var(--header-h);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 80;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(55, 62, 101, 0.22);
+  backdrop-filter: blur(7px);
+}
+
+.modal.show { display: flex; }
+.modalBox {
+  width: min(720px, 100%);
+  max-height: calc(100dvh - var(--header-h) - 24px);
+  padding: 0 19px 19px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  color: var(--ink);
+  background: linear-gradient(150deg, rgba(245, 252, 255, 0.96), rgba(246, 241, 255, 0.96) 62%, rgba(255, 240, 246, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: 8px;
+  box-shadow: 0 26px 76px rgba(54, 63, 112, 0.28);
+}
+
+.modalHead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; min-height: 54px; margin: 0 -19px 12px; padding: 8px 19px; background: linear-gradient(100deg, rgba(229, 248, 255, 0.96), rgba(243, 239, 255, 0.96), rgba(255, 235, 243, 0.96)); border-bottom: 1px solid rgba(150, 169, 201, 0.4); backdrop-filter: blur(14px); }
+.modalHead strong { color: #35405a; font-size: 16px; }
+.modalBox h3 { margin: 18px 0 7px; color: #3f4c67; font-size: 13px; }
+.modalBox p,
+.modalBox li { color: #566178; font-size: 12px; line-height: 1.6; }
+.modalBox ul { padding-left: 20px; }
+.modalBox .aboutLead { margin: 0 0 6px; color: #748096; }
+.modalBox .aboutNotice { padding: 10px 12px; background: rgba(255, 250, 237, 0.72); border: 1px solid rgba(226, 193, 130, 0.54); border-radius: 7px; }
+kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 23px; height: 21px; padding: 0 6px; color: #304a44; background: #f7faf9; border: 1px solid #bdcec9; border-bottom-width: 2px; border-radius: 5px; font: 11px Consolas, monospace; }
+.mobileBtn { display: none; }
+
+/* Converter */
+.converterApp {
+  position: relative;
+  z-index: 1;
+  width: var(--app-w, 100vw);
+  height: var(--app-h, 100dvh);
+  display: none;
+  grid-template-rows: minmax(0, 1fr) 30px;
+  padding-top: var(--header-h);
+  overflow: hidden;
+}
+
+body.converter-mode .app { display: none; }
+body.converter-mode .converterApp { display: grid; }
+.converterSource { display: none; }
+
+.converterMain {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 390px);
+  overflow: hidden;
+}
+
+.converterWorkspace {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(176px, 21vh) minmax(172px, 21vh) minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(222, 246, 255, 0.2), rgba(241, 235, 255, 0.2) 58%, rgba(255, 234, 242, 0.2));
+}
+
+.converterSettings {
+  min-width: 0;
+  padding: 20px;
+  overflow-y: auto;
+  background: linear-gradient(160deg, rgba(231, 249, 255, 0.58), rgba(243, 239, 255, 0.6) 58%, rgba(255, 234, 242, 0.64));
+  border-left: 1px solid rgba(255, 255, 255, 0.76);
+  box-shadow: -14px 0 34px rgba(73, 87, 145, 0.08);
+  backdrop-filter: blur(16px) saturate(1.12);
+}
+
+.converterSettings h2 { margin: 0 0 4px; color: #35405a; font-size: 19px; }
+.converterSettings > .cvLead { margin: 0 0 18px; color: #7d8699; font-size: 11px; }
+
+.cvDrop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #58657d;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(232, 249, 255, 0.72), rgba(242, 236, 255, 0.7) 58%, rgba(255, 237, 244, 0.68));
+  border: 1.5px dashed rgba(104, 148, 208, 0.72);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.cvDrop:hover,
+.cvDrop.over { background: linear-gradient(135deg, rgba(218, 246, 255, 0.9), rgba(236, 230, 255, 0.86), rgba(255, 230, 240, 0.82)); border-color: #7c8fdd; box-shadow: inset 0 0 0 3px rgba(113, 132, 213, 0.08), 0 12px 28px rgba(83, 98, 157, 0.1); }
+.cvDrop input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.cvDropIcon { width: 44px; height: 44px; margin: 0 auto 7px; color: #718edc; }
+.cvDrop strong { display: block; color: #3e4963; font-size: 18px; }
+.cvDrop p { margin: 4px 0 0; color: #7a8498; font-size: 11.5px; }
+.cvDrop button { min-width: 108px; height: 33px; margin-top: 9px; color: #5d70a7; font-weight: 680; border-color: rgba(134, 157, 205, 0.66); }
+
+.cvPanel {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(73, 88, 145, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.cvPanelHead {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 13px;
+  background: linear-gradient(100deg, rgba(226, 247, 255, 0.74), rgba(241, 236, 255, 0.68), rgba(255, 236, 244, 0.66));
+  border-bottom: 1px solid rgba(153, 171, 202, 0.34);
+}
+
+.cvPanelHead > div:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cvPanelHead strong { color: #43506a; font-size: 13.5px; }
+.cvPanelHead span { color: #7c8598; font-size: 10.5px; }
+.cvHeadActions { display: flex; align-items: center; gap: 5px; }
+.cvHeadActions button { height: 28px; padding: 0 9px; font-size: 10.5px; }
+.cvTableWrap { min-width: 0; min-height: 0; flex: 1; overflow: auto; }
+
+.cvTable { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12px; }
+.cvTable th { position: sticky; top: 0; z-index: 1; height: 35px; padding: 0 9px; color: #68738b; text-align: left; background: rgba(249, 251, 255, 0.88); border-bottom: 1px solid rgba(155, 172, 202, 0.34); font-weight: 680; }
+.cvTable td { height: 35px; padding: 0 9px; color: #4c586f; border-bottom: 1px solid rgba(166, 181, 207, 0.26); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cvTable tbody tr { cursor: pointer; }
+.cvTable tbody tr:hover { background: rgba(237, 242, 255, 0.7); }
+.cvTable tbody tr.current { background: linear-gradient(90deg, rgba(218, 246, 255, 0.8), rgba(237, 232, 255, 0.78), rgba(255, 233, 241, 0.72)); }
+.cvTable th:first-child,
+.cvTable td:first-child { width: 48px; padding: 0; text-align: center; }
+.cvFileTable th:nth-last-child(-n + 3),
+.cvFileTable td:nth-last-child(-n + 3) { text-align: center; }
+.cvDataTable th:not(:first-child),
+.cvDataTable td:not(:first-child) { text-align: center; }
+.cvTable input { accent-color: var(--teal); }
+.cvFileTable th:nth-child(2) { width: 42%; text-align: left; }
+.cvFileTable th:nth-child(3) { width: 12%; }
+.cvFileTable th:nth-child(4) { width: 13%; }
+.cvFileTable th:nth-child(5) { width: 10%; }
+.cvFileTable th:nth-child(6) { width: 15%; }
+.cvFileTable td:nth-child(2) { text-align: left; }
+.cvFileName { color: #445069; font-weight: 650; }
+.cvSubName { color: #81899c; font-size: 10px; }
+.cvGood { color: #168555; font-weight: 680; }
+.cvWarn { color: #ac6b0e; font-weight: 680; }
+.cvBad { color: #c94755; font-weight: 680; }
+
+.cvPreviewEmpty { height: 100%; display: flex; align-items: center; justify-content: center; color: #80899b; font-size: 12px; line-height: 1.7; text-align: center; }
+.cvPreviewInfo { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
+.cvTag { height: 24px; display: inline-flex; align-items: center; padding: 0 7px; color: #69748b; background: rgba(255, 255, 255, 0.68); border: 1px solid rgba(151, 170, 202, 0.46); border-radius: 5px; font-size: 10px; white-space: nowrap; }
+.cvTag.correction { color: #28756d; background: #f0fbf8; border-color: #a9ddd4; cursor: help; }
+.cvTag.warning { color: #93600c; background: #fff9ec; border-color: #edd1a1; }
+.cvPreviewRange { color: #748984; font-size: 10.5px; }
+.cvPager { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.cvPager button { height: 27px; padding: 0 8px; color: #3f625a; font-size: 10.5px; }
+.cvPager span { color: #5e756f; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.cvPager select { width: auto; height: 27px; padding: 0 22px 0 7px; font-size: 10.5px; }
+.cvIssues { max-height: 72px; padding: 6px 10px; overflow: auto; color: #8a5f19; background: #fffaf3; border-top: 1px solid #e7ded0; font-size: 10.5px; line-height: 1.45; }
+.cvIssues .correction { color: #28756d; }
+.cvMetricHint { margin: 8px 1px 0; color: #7c8598; font-size: 10px; line-height: 1.45; }
+
+.cvSettingGroup { padding: 14px 0; border-top: 1px solid rgba(151, 170, 202, 0.34); }
+.cvSettingGroup:first-of-type { padding-top: 0; border-top: 0; }
+.cvSettingTitle { display: block; margin-bottom: 8px; color: #4b5670; font-size: 12px; font-weight: 730; }
+.cvOutputChoice { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; background: rgba(255, 255, 255, 0.56); border: 1px solid rgba(148, 169, 203, 0.48); border-radius: 7px; }
+.cvOutputChoice button { height: 44px; color: #657087; background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.cvOutputChoice button + button { border-left: 1px solid rgba(151, 170, 201, 0.36); }
+.cvOutputChoice button.active { color: #fff; font-weight: 700; background: linear-gradient(112deg, #58b8ce, #7192df 54%, #a182df); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24); }
+.cvOutputChoice button.active:hover { color: #fff; background: linear-gradient(112deg, #4dabc1, #6786d3 54%, #9576d3); border-color: transparent; }
+.cvOutputInfo { margin: 8px 0 0; color: #72857f; font-size: 10.5px; line-height: 1.45; }
+.cvReverseRule { padding: 11px; color: #59657c; background: linear-gradient(135deg, rgba(226, 247, 255, 0.72), rgba(241, 235, 255, 0.7)); border: 1px solid rgba(150, 170, 204, 0.42); border-radius: 7px; font-size: 11px; line-height: 1.55; }
+.cvSummary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.cvMetric { padding: 12px 5px; text-align: center; background: rgba(255, 255, 255, 0.56); border: 1px solid rgba(255, 255, 255, 0.82); border-radius: 7px; box-shadow: 0 6px 16px rgba(79, 94, 151, 0.07); }
+.cvMetric b { display: block; color: #46536d; font-size: 20px; font-variant-numeric: tabular-nums; }
+.cvMetric span { display: block; margin-top: 2px; color: #80899b; font-size: 9.5px; }
+.cvPrimary,
+.cvSecondary { width: 100%; height: 47px; font-weight: 730; }
+.cvPrimary { color: #fff; background: linear-gradient(112deg, #55b7cb, #7191df 56%, #a184df); border-color: transparent; box-shadow: 0 10px 24px rgba(82, 101, 178, 0.22); }
+.cvPrimary:hover:not(:disabled) { color: #fff; background: linear-gradient(112deg, #4baabd, #6685d3 56%, #9577d3); border-color: transparent; }
+.cvSecondary { margin-top: 9px; color: #5c70a4; background: rgba(255, 255, 255, 0.62); border-color: rgba(137, 157, 203, 0.64); }
+.cvPrivacy { display: flex; gap: 7px; margin-top: 11px; padding: 10px; color: #788297; background: rgba(244, 247, 255, 0.54); border-radius: 7px; font-size: 10px; line-height: 1.45; }
+.cvPrivacy svg { width: 15px; height: 15px; flex: 0 0 auto; color: #728bd0; }
+.converterStatus { height: 30px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; color: #69748a; background: rgba(255, 255, 255, 0.46); border-top: 1px solid rgba(255, 255, 255, 0.7); font-size: 10.5px; }
+
+body.dragging .plotWrap { outline: 2px dashed var(--teal); outline-offset: -8px; background: #f4fbf9; }
+
+@media (max-width: 1280px) {
+  #sharedHeader { grid-template-columns: 185px auto minmax(0, 1fr) auto auto; gap: 9px; padding: 0 11px; }
+  .sharedBrand .brand { font-size: 19px; }
+  .sharedBrand .sub { font-size: 8.5px; }
+  .sharedToolSwitch button { min-width: 82px; padding: 0 9px; }
+  .topFileBar #fileName { display: none; }
+  .topFileBar #sheet { width: min(235px, 20vw); }
+}
+
+@media (max-width: 1180px) {
+  .app { grid-template-columns: 1fr; }
+  .side {
+    position: fixed;
+    grid-column: auto;
+    grid-row: auto;
+    top: var(--header-h);
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    width: min(390px, 94vw);
+    transform: translateX(100%);
+    transition: transform 0.2s;
+  }
+  .side.open { transform: none; }
+  .mobileBtn { display: inline-flex; }
+}
+
+@media (max-width: 900px) {
+  :root { --header-h: 60px; }
+  #sharedHeader { grid-template-columns: 145px auto minmax(0, 1fr) auto auto; gap: 6px; padding: 0 7px; }
+  .sharedBrand .brandBlock { grid-template-columns: 34px minmax(0, 1fr); padding: 8px 0; }
+  .sharedBrand .brandMark,
+  .sharedBrand .brandMark svg { width: 28px; height: 28px; }
+  .sharedBrand .brand { font-size: 17px; }
+  .sharedBrand .sub { display: none; }
+  .sharedToolSwitch button { min-width: 70px; height: 32px; padding: 0 7px; font-size: 11px; }
+  .topFileBar #sheet,
+  .topFieldLabel { display: none; }
+  .topActions #undo,
+  .topActions #redo { display: none; }
+  .directionSwitch button { min-width: 96px; height: 32px; padding: 0 8px; font-size: 11px; }
+  .converterApp { overflow: auto; grid-template-rows: auto 30px; }
+  .converterMain { grid-template-columns: 1fr; overflow: visible; }
+  .converterWorkspace { grid-template-rows: 155px 195px 370px; }
+  .converterSettings { border-top: 1px solid #c8dbd6; border-left: 0; }
+}
+
+@media (max-width: 620px) {
+  #sharedHeader { grid-template-columns: 108px auto minmax(0, 1fr) auto auto; gap: 4px; padding: 0 5px; }
+  .sharedBrand .brandBlock { grid-template-columns: 26px minmax(0, 1fr); }
+  .sharedBrand .brandMark,
+  .sharedBrand .brandMark svg { width: 23px; height: 23px; }
+  .sharedBrand .brand { font-size: 15px; }
+  .sharedToolSwitch button { min-width: auto; padding: 0 6px; font-size: 10px; }
+  .topFileBar #fileBtn { width: 35px; padding: 0; overflow: hidden; }
+  .topFileBar #fileBtn span { display: none; }
+  .topActions :is(#export, #exportCsv) { width: 38px; min-width: 38px; padding: 0; }
+  .topActions :is(#export, #exportCsv) span { display: none; }
+  #sharedAboutBtn { min-width: 34px; width: 34px; height: 34px; padding: 0; }
+  #sharedAboutBtn span { display: none; }
+  .directionSwitch button { min-width: auto; padding: 0 6px; font-size: 10px; }
+  .cursorReadout { display: none; }
+  .modeBtn { min-width: auto; padding: 0 7px; }
+  .chartToolbarRight .zeroToggle { display: none; }
+  .cvPanelHead { min-height: 58px; align-items: flex-start; flex-direction: column; gap: 5px; padding: 7px 9px; }
+  .cvPreviewInfo { width: 100%; justify-content: flex-start; }
+  .cvTag { display: none; }
+  .cvFileTable th:nth-child(3),
+  .cvFileTable td:nth-child(3) { display: none; }
+  .converterWorkspace { padding: 8px; }
+  .converterSettings { padding: 14px; }
+  .converterStatus span:last-child,
+  .status span:last-child { display: none; }
+}
+
+html[data-theme="sand"] {
+  --ink: #463c30; --ink-soft: #655744; --muted: #796950;
+  --line: #dfd7c8; --line-blue: #d8cbb5;
+  --teal: #926832; --teal-dark: #775326;
+  --theme-bg: #f2eee5; --theme-panel: #fcf9f1; --theme-side: #eee7d9;
+  --theme-soft: #f6f0e4; --theme-hover: #eee5d2; --theme-selected: #eae0ca;
+  --theme-accent: #926832; --theme-accent-hover: #775326;
+  --theme-disabled: #efeade; --theme-disabled-text: #978d7e;
+  --theme-shadow: rgba(88,69,40,.08); --theme-focus: #926832;
+  --theme-popover: #fcf9f1; --theme-option: #f6f0e4;
+  --plot-bg: #fcf9f1; --plot-grid: #e5ddce; --plot-text: #655744;
+  --plot-axis: #c7bba4; --plot-label: #463c30;
+  --plot-reference: rgba(70,60,48,.24); --plot-reference-text: #796950;
+  --plot-selection: rgba(146,104,50,.10); --plot-selection-line: rgba(146,104,50,.7);
+  --plot-point: #926832; --plot-drag: rgba(146,104,50,.12); --plot-drag-line: rgba(146,104,50,.82);
+}
+html[data-theme="slate"] {
+  --ink: #293c49; --ink-soft: #4e6270; --muted: #586b79;
+  --line: #cdd8de; --line-blue: #bfced7;
+  --teal: #4a7188; --teal-dark: #365a70;
+  --theme-bg: #e9eef1; --theme-panel: #f3f6f7; --theme-side: #e2e9ed;
+  --theme-soft: #edf2f4; --theme-hover: #dde8ee; --theme-selected: #d6e4eb;
+  --theme-accent: #4a7188; --theme-accent-hover: #365a70;
+  --theme-disabled: #e5ecef; --theme-disabled-text: #87959d;
+  --theme-shadow: rgba(43,65,79,.08); --theme-focus: #4a7188;
+  --theme-popover: #f3f6f7; --theme-option: #edf2f4;
+  --plot-bg: #f3f6f7; --plot-grid: #dbe4e9; --plot-text: #4e6270;
+  --plot-axis: #afc1cc; --plot-label: #293c49;
+  --plot-reference: rgba(41,60,73,.24); --plot-reference-text: #586b79;
+  --plot-selection: rgba(74,113,136,.10); --plot-selection-line: rgba(74,113,136,.7);
+  --plot-point: #4a7188; --plot-drag: rgba(74,113,136,.12); --plot-drag-line: rgba(74,113,136,.82);
+}
+html[data-theme="lavender"] {
+  --ink: #40374e; --ink-soft: #635670; --muted: #756681;
+  --line: #dcd3e3; --line-blue: #cec0da;
+  --teal: #7d6398; --teal-dark: #654b81;
+  --theme-bg: #efeaf3; --theme-panel: #faf6fc; --theme-side: #e9e1ef;
+  --theme-soft: #f3edf7; --theme-hover: #eae0f1; --theme-selected: #e5d8ef;
+  --theme-accent: #7d6398; --theme-accent-hover: #654b81;
+  --theme-disabled: #ede7f0; --theme-disabled-text: #968b9e;
+  --theme-shadow: rgba(70,50,90,.07); --theme-focus: #7d6398;
+  --theme-popover: #faf6fc; --theme-option: #f3edf7;
+  --plot-bg: #faf6fc; --plot-grid: #e6deed; --plot-text: #635670;
+  --plot-axis: #c4b5cf; --plot-label: #40374e;
+  --plot-reference: rgba(64,55,78,.24); --plot-reference-text: #756681;
+  --plot-selection: rgba(125,99,152,.10); --plot-selection-line: rgba(125,99,152,.7);
+  --plot-point: #7d6398; --plot-drag: rgba(125,99,152,.12); --plot-drag-line: rgba(125,99,152,.82);
+}
+/* Small supporting text gets more contrast without changing the layout. */
+html[data-theme] :is(.sharedBrand .sub, .topFieldLabel, .sideIntro span, .side .hint, .sampleInline, .chHead, .ptCount, .empty, .modalBox .aboutLead, .converterSettings > .cvLead, .cvDrop p, .cvPanelHead span, .cvSubName, .cvPreviewEmpty, .cvPreviewRange, .cvPager span, .cvMetricHint, .cvOutputInfo, .cvMetric span, .cvPrivacy) { color: var(--muted); }
+html[data-theme] input::placeholder { color: var(--muted); opacity: 1; }
+
+/* Themes change paint only; control sizing and layout remain shared. */
+:root {
+  --plot-bg: #fbfdff;
+  --plot-grid: #dce3ef;
+  --plot-text: #344059;
+  --plot-axis: #a8b6ce;
+  --plot-label: #35405a;
+  --plot-reference: rgba(15,23,42,.22);
+  --plot-reference-text: rgba(36,48,68,.55);
+  --plot-selection: rgba(37,99,235,.10);
+  --plot-selection-line: rgba(37,99,235,.7);
+  --plot-point: rgba(37,99,235,.95);
+  --plot-drag: rgba(104,139,224,.12);
+  --plot-drag-line: rgba(112,126,211,.82);
+  --theme-popover: linear-gradient(145deg, #f1f8ff, #f9f0fa);
+  --theme-option: rgba(255,255,255,.65);
+  --theme-selected: rgba(113,143,221,.12);
+  --theme-focus: #879ee4;
+}
+html[data-theme="blue"] {
+  --ink: #26364c; --ink-soft: #52657c; --muted: #617189;
+  --line: #d5dfeb; --line-blue: #cad8e9;
+  --teal: #356ad8; --teal-dark: #2858bb;
+  --theme-bg: #f2f5fa; --theme-panel: #ffffff; --theme-side: #edf2f8;
+  --theme-soft: #f5f8fc; --theme-hover: #eaf1fc; --theme-selected: #e4edfc;
+  --theme-accent: #356ad8; --theme-accent-hover: #2858bb;
+  --theme-disabled: #edf1f6; --theme-disabled-text: #8b98aa;
+  --theme-shadow: rgba(41,65,103,.09); --theme-focus: #356ad8;
+  --theme-popover: #ffffff; --theme-option: #f5f8fc;
+  --plot-bg: #ffffff; --plot-grid: #e2e8f1; --plot-text: #52657c;
+  --plot-axis: #b8c7da; --plot-label: #26364c;
+}
+html[data-theme="sage"] {
+  --ink: #2c4039; --ink-soft: #546b61; --muted: #5f7165;
+  --line: #d5dfd5; --line-blue: #cad9ce;
+  --teal: #367b65; --teal-dark: #28634f;
+  --theme-bg: #f4f4ee; --theme-panel: #fffef9; --theme-side: #eaf0e7;
+  --theme-soft: #f3f6ef; --theme-hover: #e9f1e7; --theme-selected: #e1eddf;
+  --theme-accent: #367b65; --theme-accent-hover: #28634f;
+  --theme-disabled: #edf0e9; --theme-disabled-text: #909b90;
+  --theme-shadow: rgba(54,79,61,.08); --theme-focus: #367b65;
+  --theme-popover: #fffef9; --theme-option: #f3f6ef;
+  --plot-bg: #fffef9; --plot-grid: #e4e8dd; --plot-text: #546b61;
+  --plot-axis: #bccbbd; --plot-label: #2c4039;
+  --plot-reference: rgba(44,64,57,.24); --plot-reference-text: #738379;
+  --plot-selection: rgba(54,123,101,.10); --plot-selection-line: rgba(54,123,101,.7);
+  --plot-point: #367b65; --plot-drag: rgba(54,123,101,.12); --plot-drag-line: rgba(54,123,101,.82);
+}
+html[data-theme]:not([data-theme="pink"]) {
+  --shadow-sm: 0 6px 18px var(--theme-shadow);
+  --shadow-md: 0 16px 40px var(--theme-shadow);
+}
+html[data-theme]:not([data-theme="pink"]) body { background: var(--theme-bg); }
+html[data-theme]:not([data-theme="pink"]) body::before { background: none; }
+html[data-theme]:not([data-theme="pink"]) :is(#sharedHeader, .modalHead, .cvPanelHead) { background: var(--theme-panel); border-color: var(--line); box-shadow: 0 8px 28px var(--theme-shadow); }
+html[data-theme]:not([data-theme="pink"]) #sharedHeader::after { background: none; }
+html[data-theme]:not([data-theme="pink"]) :is(.stage, .converterWorkspace) { background: var(--theme-bg); }
+html[data-theme]:not([data-theme="pink"]) :is(.side, .converterSettings) { background: var(--theme-side); border-color: var(--line); box-shadow: -14px 0 34px var(--theme-shadow); scrollbar-color: var(--line-blue) transparent; }
+html[data-theme]:not([data-theme="pink"]) :is(.side .group, .plotWrap, .cvPanel, .modalBox, .selPicker) { background: var(--theme-panel); border-color: var(--line); box-shadow: var(--shadow-sm); }
+html[data-theme]:not([data-theme="pink"]) :is(.sharedToolSwitch, .directionSwitch, .modeTabs, .formulaManageMenu, .cvOutputChoice, .cvMetric) { background: var(--theme-soft); border-color: var(--line); box-shadow: var(--shadow-sm); }
+html[data-theme]:not([data-theme="pink"]) :is(input[type="number"], input[type="text"], select, button) { color: var(--ink-soft); background: var(--theme-panel); border-color: var(--line-blue); box-shadow: none; }
+html[data-theme]:not([data-theme="pink"]) button:hover:not(:disabled) { color: var(--ink); background: var(--theme-hover); border-color: var(--theme-accent); box-shadow: none; }
+html[data-theme]:not([data-theme="pink"]) :is(input, select):focus { border-color: var(--theme-accent); box-shadow: 0 0 0 3px var(--theme-selected); }
+html[data-theme]:not([data-theme="pink"]) :is(.sharedToolSwitch button, .directionSwitch button, .modeBtn, .cvOutputChoice button) { background: transparent; border-color: transparent; box-shadow: none; color: var(--ink-soft); }
+html[data-theme]:not([data-theme="pink"]) .topActions :is(#undo, #redo) { background: transparent; border-color: transparent; box-shadow: none; color: var(--ink-soft); }
+html[data-theme]:not([data-theme="pink"]) :is(#fileBtn, #sharedAboutBtn, #themeButton, #fileName, .chartToolbar #fit, .zeroToggle, .rangeBox, .cvTag, .cvSecondary, .cvPrivacy, .cvReverseRule, .cvDrop) { color: var(--ink-soft); background: var(--theme-soft); border-color: var(--line-blue); box-shadow: none; }
+html[data-theme]:not([data-theme="pink"]) :is(.cvDrop.over, .selOption:hover, .cvTable tbody tr:hover) { background: var(--theme-hover); border-color: var(--theme-accent); box-shadow: none; }
+html[data-theme]:not([data-theme="pink"]) :is(.ch, .ch:nth-child(even):not(.chHead)) { color: var(--ink-soft); background: var(--theme-panel); }
+html[data-theme]:not([data-theme="pink"]) .ch:nth-child(odd):not(.chHead) { background: var(--theme-soft); }
+html[data-theme]:not([data-theme="pink"]) .ch:not(.chHead):hover { background: var(--theme-hover); box-shadow: none; }
+html[data-theme]:not([data-theme="pink"]) .chHead { color: var(--muted); background: transparent; border-color: var(--line); }
+html[data-theme]:not([data-theme="pink"]) :is(.status, .converterStatus, .cvTable th) { color: var(--ink-soft); background: var(--theme-soft); border-color: var(--line); }
+html[data-theme]:not([data-theme="pink"]) :is(.cvTable td, .cvSettingGroup, .selPickerHead, .selAll) { color: var(--ink-soft); border-color: var(--line); }
+html[data-theme]:not([data-theme="pink"]) .cvTable tbody tr.current { background: var(--theme-selected); }
+html[data-theme]:not([data-theme="pink"]) :is(.sharedBrand .brand, .sideIntro strong, .side .label, .modalHead strong, .modalBox h3, .converterSettings h2, .cvDrop strong, .cvPanelHead strong, .cvFileName, .cvSettingTitle, .cvMetric b) { color: var(--ink); }
+html[data-theme]:not([data-theme="pink"]) :is(.cursorReadout, .ch, .sampleInline input, .modalBox li, .selOption) { color: var(--ink-soft); }
+html[data-theme]:not([data-theme="pink"]) :is(.sharedBrand .sub, .topFieldLabel, .sideIntro span, .side .hint, .sampleInline, .ptCount, .empty, .modalBox .aboutLead, .converterSettings > .cvLead, .cvDrop p, .cvPanelHead span, .cvSubName, .cvPreviewEmpty, .cvPreviewRange, .cvPager span, .cvMetricHint, .cvOutputInfo, .cvMetric span) { color: var(--muted); }
+html[data-theme]:not([data-theme="pink"]) :is(.sharedBrand .brandMark, .baseBtn, .formulaIconButton, .formulaManageMenu button, .cvDropIcon, .cvPrivacy svg, .selAll) { color: var(--theme-accent); }
+html[data-theme]:not([data-theme="pink"]) :is(button.primary, button.blue, #export, .cvPrimary, .sharedToolSwitch button.active, .directionSwitch button.active, .modeBtn.active, .formulaIconButton.isActive, .cvOutputChoice button.active) { color: #fff; background: var(--theme-accent); border-color: transparent; box-shadow: 0 4px 12px var(--theme-shadow); }
+html[data-theme]:not([data-theme="pink"]) :is(button.primary, button.blue, #export, .cvPrimary, .sharedToolSwitch button.active, .directionSwitch button.active, .modeBtn.active, .formulaIconButton.isActive, .cvOutputChoice button.active):hover:not(:disabled) { color: #fff; background: var(--theme-accent-hover); border-color: transparent; filter: none; }
+html[data-theme]:not([data-theme="pink"]) :is(button, input, select):disabled { color: var(--theme-disabled-text); background: var(--theme-disabled); border-color: var(--line); box-shadow: none; }
+html[data-theme]:not([data-theme="pink"]) :is(button.primary, button.blue, #export, .cvPrimary, .formulaIconButton.isActive):disabled { color: var(--theme-disabled-text); background: var(--theme-disabled); border-color: var(--line); box-shadow: none; }
+html[data-theme]:not([data-theme="pink"]) .modeBtn:disabled { background: transparent; border-color: transparent; }
+html[data-theme]:not([data-theme="pink"]) button.danger:not(:disabled) { color: #bc4f62; background: #fff6f7; border-color: #e7bdc6; }
+html[data-theme]:not([data-theme="pink"]) button.danger:hover:not(:disabled) { color: #a64052; background: #ffedf0; border-color: #dca6b2; }
+html[data-theme]:not([data-theme="pink"]) #fileName.dirty { border-color: #daa55d; background: #fff8e1; }
+html[data-theme]:not([data-theme="pink"]) .cvTag.correction { color: #28756d; background: #f0fbf8; border-color: #a9ddd4; }
+html[data-theme]:not([data-theme="pink"]) .cvTag.warning { color: #93600c; background: #fff9ec; border-color: #edd1a1; }
+html[data-theme]:not([data-theme="pink"]) .toast { background: var(--ink); box-shadow: var(--shadow-md); }
+html[data-theme]:not([data-theme="pink"]) .modal { background: var(--theme-shadow); }
+html[data-theme]:not([data-theme="pink"]) kbd { color: var(--ink-soft); background: var(--theme-soft); border-color: var(--line-blue); }
+canvas { background: var(--plot-bg); }
+
+.headerUtilities { display: flex; align-items: center; gap: 6px; }
+#themeButton { height: 38px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
+#themeButton:focus-visible, .themeChoice:focus-within { outline: 2px solid var(--theme-focus); outline-offset: 2px; }
+.themePopover { position: fixed; top: calc(var(--header-h) + 8px); right: 12px; z-index: 100; width: min(270px, calc(100vw - 24px)); padding: 14px; background: var(--theme-popover); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-md); color: var(--ink); }
+.themePopover { max-height: calc(100dvh - var(--header-h) - 24px); overflow-y: auto; overscroll-behavior: contain; }
+.themePopover[hidden] { display: none; }
+.themePopover fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.themePopover legend { padding: 0; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+.themeChoice { display: flex; align-items: center; gap: 9px; padding: 11px 9px; margin-top: 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--theme-option); cursor: pointer; font-size: 13px; }
+.themeChoice:has(input:checked) { border-color: var(--theme-focus); background: var(--theme-selected); }
+.themeChoice input { margin: 0; accent-color: var(--theme-focus); }
+.themeSwatch { display: inline-flex; margin-left: auto; overflow: hidden; border-radius: 4px; border: 1px solid rgba(100,120,145,.2); }
+.themeSwatch i { width: 13px; height: 22px; }
+.themePopover p { margin: 11px 0 0; font-size: 11px; color: var(--muted); }
+@media (max-width: 900px) { #themeButton { width: 34px; height: 34px; padding: 0; } #themeButton span { display: none; } .headerUtilities { gap: 4px; } }
+@media (max-width: 620px) {
+  #sharedHeader { grid-template-columns: 90px auto minmax(0, 1fr) auto auto; }
+  .topActions #menu { width: 34px; padding: 0; font-size: 11px; white-space: nowrap; }
+  .cursorReadout { display: none !important; }
+  .modeBtn { white-space: nowrap; font-size: 11px; }
+  .modeTabs { flex-shrink: 0; }
+}
+@media (max-width: 380px) {
+  #sharedHeader { grid-template-columns: 26px auto minmax(0, 1fr) auto auto; }
+  .sharedBrand .brand { display: none; }
+}
+
+</style>
+</head><body><div class="app"><aside class="side" id="side"><h1 class="brand">ResiScope</h1><p class="sub">电阻曲线预览、编辑与导出工具</p><div class="group" style="border-top:0;margin-top:0;padding-top:0"><p class="label">数据文件</p><div class="filePick"><button id="fileBtn" type="button">选择文件</button><span id="pickedName" class="pickedName">未选择文件</span><input id="file" type="file" accept=".xlsx,.csv,.tsv"></div><select id="sheet" style="margin-top:10px"></select><p class="hint">支持 .xlsx / .csv / .tsv，可点击选择或直接拖入文件。</p></div><div class="group"><p class="label">采样间隔</p><div class="sampleRow"><input id="dt" type="number" value="0.2" min="0.001" step="0.001"><span>秒/点</span><button id="applyDt">应用</button></div><p class="hint" id="dtHint">无时间列时自动按采样间隔生成横轴。</p></div><div class="group"><p class="label">通道显示</p><div class="row" style="margin-bottom:8px"><button id="allOn" class="small">全选</button><button id="allOff" class="small">全关</button><button id="fit" class="small">全图</button><label class="zeroToggle" id="zeroRefWrap" title="控制电阻视图是否包含并显示 0 Ω 基准线"><input id="zeroRef" type="checkbox" checked><span>0 Ω</span></label></div><div class="channels" id="channels"></div></div><div class="group"><p class="label">框选区间</p><div class="rangeBox" id="rangeText">尚未框选。拖动图表可框选，单击清除。</div><div class="grid2" style="margin-top:8px"><button id="selectAllData">全选显示数据</button><button id="deleteSel" class="danger">删除选中数据</button></div></div><div class="group"><p class="label">局部数据处理</p><div class="grid2" style="grid-template-columns:92px 1fr"><select id="op"><option value="+">加 +</option><option value="-">减 -</option><option value="*" selected>乘 ×</option><option value="/">除 ÷</option><option value="=">设为 =</option><option value="formula">公式 f(x)</option></select><input id="operand" type="text" value="1.0" placeholder="1.0"></div><button id="applyOp" class="primary" style="width:100%;margin-top:8px">应用到框选区间</button></div><div class="group"><p class="label">滤波</p><div class="grid2"><select id="filterType"><option value="moving">移动平均</option><option value="median">中值滤波</option><option value="gaussian">高斯平滑</option><option value="exp">指数平滑</option><option value="edge">保边三点平滑</option></select><input id="filterWin" type="number" value="5" min="3" max="1001" step="2"></div><button id="applyFilter" class="blue" style="width:100%;margin-top:8px">应用滤波到框选区间</button></div><div class="group"><p class="label">导出方式</p><div class="exportGrid"><select id="exportDataMode"><option value="resistance">导出电阻</option><option value="response" disabled>导出响应值</option><option value="percent" disabled>导出响应百分比</option></select><select id="exportMode"><option value="new">新 Excel：sheet 保持原名</option><option value="append">原文件副本：添加修改 sheet</option></select></div><div class="grid3" style="margin-top:8px"><button id="undo" class="danger" title="撤销上一次数据操作 (Ctrl+Z)">撤销</button><button id="redo" title="重新执行刚撤销的操作 (Ctrl+Y)">重做</button><button id="export" class="primary" title="导出当前修改结果 (Ctrl+S)">导出 Excel</button></div><p class="hint">不会覆盖原文件；添加 sheet 会导出副本。</p></div></aside><main class="main"><div class="top"><div class="tools"><button class="mobileBtn" id="menu">菜单</button><div class="modeTabs"><button id="modeResistance" class="modeBtn active" data-view="resistance">电阻</button><button id="modeResponse" class="modeBtn" data-view="response" disabled>响应值</button><button id="modePercent" class="modeBtn" data-view="percent" disabled>响应百分比</button></div><div class="cursorReadout" id="cursorReadout">时间 -- / 电阻 --</div></div><div class="tools"><span class="pill" id="fileName">未加载文件</span><span class="saveState" id="saveState" hidden>未导出</span><button id="aboutBtn" class="pill">关于</button></div></div><div class="stage"><div class="plotWrap"><canvas id="plot"></canvas><div class="selPicker" id="selPicker"></div><div class="empty" id="empty">选择或拖入 Excel 文件开始预览<br>表头可为 CH1、CH2、CH3，也可包含 Time/时间列</div><div class="toast" id="toast"></div></div><div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle"><div class="modalBox"><div class="modalHead"><strong id="aboutTitle">关于 ResiScope</strong><button id="aboutClose" type="button">关闭</button></div><p><b>ResiScope</b></p><p class="aboutLead">电阻曲线预览、编辑、导出与实验数据格式转换工具</p><p>开发者：橙汁</p><p class="aboutNotice"><b>免责声明：</b>本工具用于数据预览、清洗和辅助分析。请始终保留原始文件与必要的处理记录，避免为追求曲线外观而过度滤波、选择性删除或改变实验结论；自动纠正和需检查行应由使用者核实，导出结果应结合实验记录和专业判断使用。</p><h3>工具组成</h3><ul><li><b>曲线编辑：</b>读取 .xlsx / .csv / .tsv，预览多通道电阻曲线并进行局部处理、基线响应计算和结果导出。</li><li><b>数据转换：</b>支持 TXT → Excel 与 Excel → TXT，可合并或分别导出，并提供分页数据预览和格式检查。</li></ul><h3>曲线编辑</h3><ul><li>支持多工作表；可识别 Time、时间、秒、sec、second、s 等时间列。没有时间列时按采样间隔生成横轴，默认 0.2 秒/点。</li>
+<li>滚轮同时缩放横纵坐标；可从画布、坐标轴或轴标题区域开始拖动框选，拖出画布时选框会吸附到绘图区边界；单击清除选区，单点选中以圆圈标记。</li>
+<li>框选命中多个通道时可选择一个、多个或全部命中通道；选框可拖动或使用上下键纵向移动。</li><li>支持加、减、乘、除、设为、自定义公式 f(x)、常用滤波、删除、时间伸缩、撤销和重做。</li><li>时间伸缩按框选横向范围处理选定通道的连续曲线段：拉长通过线性插值增加整数数据点，缩短通过保峰重采样减少数据点；未选通道的数据不变。</li>
+<li>可按通道设置基线，并显示或导出电阻、响应值和响应百分比；响应值最多保留 6 位小数，响应百分比保持整数；所有数据编辑始终作用于原始电阻。</li>
+<li>删除只影响所选通道，后续点向前续接；未选通道不会删除对应位置。</li><li>可导出新 Excel，或基于原 xlsx 生成添加“修改”工作表的副本，不会覆盖原文件。</li></ul><h3>数据转换</h3><ul><li>TXT 推荐每个非空行表示一个采样点，例如 <code>CH0 = 10284024, CH1 = 26016254</code>；通道顺序可以变化。</li><li>电阻数据统一按整数保存；TXT 或 Excel 中的小数会四舍五入为整数。</li><li>“自动纠正通道名”会处理明显的重复编号，例如将 <code>CH66</code> 纠正为 <code>CH6</code>，并在预览下方显示原始行号和修改内容。</li><li>“需检查行”指未找到有效通道值、同一行通道重复、缺少通道，或 Excel 单元格为空/不是数字的行；具体原因显示在数据预览下方。存在需检查行时仍可转换，但应先人工确认。</li><li>Excel → TXT 只输出 CH0、CH1 等 CH 通道列；时间列和其他非 CH 列会忽略。多个工作表会分别生成 TXT，并在需要时打包为 ZIP。</li><li>转换过程完全在当前浏览器本地完成，不会上传文件。</li></ul><h3>常用快捷键</h3><ul class="shortcutList"><li><kbd>Delete</kbd> / <kbd>Backspace</kbd> 删除曲线编辑器中的框选数据</li><li><kbd>Ctrl</kbd> + <kbd>Z</kbd> 撤销；<kbd>Ctrl</kbd> + <kbd>Y</kbd> 或 <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> 重做</li><li><kbd>Ctrl</kbd> + <kbd>A</kbd> 全选当前显示通道的数据</li><li><kbd>Ctrl</kbd> + <kbd>S</kbd> 导出编辑结果；<kbd>Ctrl</kbd> + <kbd>O</kbd> 打开当前工具支持的文件</li><li><kbd>↑</kbd> / <kbd>↓</kbd> 移动选中数据；按住 <kbd>Shift</kbd> 增大步长</li><li><kbd>Home</kbd> 恢复全图；<kbd>Esc</kbd> 清除选区或关闭弹窗；<kbd>F1</kbd> 打开关于</li></ul><h3>原始数据要求</h3><ul><li>Excel 推荐第一行为表头，例如 CH0、CH1、CH2；每列一个通道，每行一个采样点。建议每个工作表只放一块连续数据表。</li><li>时间列必须完整、为数字且严格递增；有时间列时采样间隔设置不会覆盖原时间。</li><li>数据单元格应为数字或空白，不建议在数据区中间放置说明文字、合并单元格、图片、图表或多段表格。</li><li>只支持新版 .xlsx，不支持旧版 .xls；公式单元格依赖文件中保存的计算结果，工具不会重新计算 Excel 公式。</li></ul><h3>适配性与限制</h3><ul><li>页面会根据窗口尺寸和显示器缩放比例自动重排并重建画布；宽度小于 1180px 时数据工具改为“菜单”抽屉，小于 900px 时数据转换页面改为纵向布局。</li><li>通道数没有硬限制，但几十个以内体验更好；超大文件会受到浏览器内存、绘图与导出速度限制。</li><li>数值型饱和值或设备错误码不会被擅自删除。例如 <code>4294967295</code> 会按原数据保留，应由使用者结合设备定义判断是否有效。</li><li>自定义公式只允许 x、数字、括号和 + - * /，例如 <code>(x + 0) * 1 / 1</code>；结果为无穷或非数字时跳过该点。</li><li>不同通道经过局部删除或时间伸缩后长度可能不同，导出时所有通道仍共用唯一的 <code>Time(s)</code> 列；较短通道末尾会留空，较长通道会按公共采样间隔延长时间轴。</li><li>显式时间列不等间隔时，时间伸缩新增的末尾时间点使用原时间列正间隔的中位数继续生成，建议导出后核对时间轴。</li></ul></div></div>
+</div><div class="status"><span id="stat">0 个通道，0 个点</span><span>横轴：秒 / 纵轴：欧姆 Ω</span></div></main></div>
+<script>
+const $=id=>document.getElementById(id),C=$('plot'),ctx=C.getContext('2d'),colors=['#5d91e8','#ee7892','#55b98f','#8b78db','#f0a85b','#45b6c8','#d86fa8','#687cdd','#84b85a','#d2aa52'];
+let wb=null,state={name:'',sheet:'',sheetIndex:0,rows:[],headers:[],channels:[],visible:{},baselines:{},view:'resistance',x:[],dt:.2,hasTime:false,x0:0,x1:1,yr:null,fullYr:null,sel:null,hover:null,undo:[],redo:[],dirty:false,includeZero:true},drag=null;
+const FORMULA_LIBRARY_KEY='resiscope.formulas.v1';
+let savedFormulas=[],activeFormulaId='',formulaDraft='(x + 0) * 1 / 1';
+function toast(s){const t=$('toast');t.textContent=s;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[m]))}
+function channelLabel(c){return c?.label||c?.name||'通道'}function updateHistoryButtons(){$('undo').disabled=!state.undo.length;$('redo').disabled=!state.redo.length}function markDirty(){if(!state.channels.length)return;state.dirty=true;$('fileName').classList.add('dirty');$('fileName').title='有尚未导出的修改';let s=$('saveState');if(s)s.hidden=false}function clearDirty(){state.dirty=false;$('fileName').classList.remove('dirty');$('fileName').title='';let s=$('saveState');if(s)s.hidden=true}function confirmDiscard(){return !state.dirty||confirm('当前修改尚未导出，继续操作将丢失这些修改。是否继续？')}
+let lastViewportKey='',resizeTimer=0;function viewportBox(){const vv=window.visualViewport,sc=window.screen||{};let w=Math.floor(vv?.width||innerWidth||document.documentElement.clientWidth||320),h=Math.floor(vv?.height||innerHeight||document.documentElement.clientHeight||360),sw=Math.floor(sc.availWidth||0),sh=Math.floor(sc.availHeight||0);return {w:Math.max(320,w),h:Math.max(360,h),d:window.devicePixelRatio||1,sw,sh}}function syncViewportVars(){const v=viewportBox(),key=v.w+'x'+v.h+'@'+v.d;document.documentElement.style.setProperty('--app-w',v.w+'px');document.documentElement.style.setProperty('--app-h',v.h+'px');return key}function resize(){lastViewportKey=syncViewportVars();const r=C.parentElement.getBoundingClientRect(),d=window.devicePixelRatio||1,cssW=Math.max(300,Math.floor(r.width)),cssH=Math.max(220,Math.floor(r.height));C.style.width=cssW+'px';C.style.height=cssH+'px';let bw=Math.max(1,Math.round(cssW*d)),bh=Math.max(1,Math.round(cssH*d));if(C.width!==bw)C.width=bw;if(C.height!==bh)C.height=bh;ctx.imageSmoothingEnabled=false;draw()}function scheduleResize(){cancelAnimationFrame(resizeTimer);resizeTimer=requestAnimationFrame(resize)}addEventListener('resize',scheduleResize);addEventListener('focus',scheduleResize);addEventListener('orientationchange',scheduleResize);if(window.visualViewport){visualViewport.addEventListener('resize',scheduleResize);visualViewport.addEventListener('scroll',scheduleResize)}if(window.ResizeObserver)new ResizeObserver(scheduleResize).observe(C.parentElement);document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleResize()});setInterval(()=>{let key=syncViewportVars();if(key!==lastViewportKey)scheduleResize()},800);scheduleResize();
+function isNum(v){return v!==''&&v!=null&&isFinite(Number(v))}function colName(n){let s='';for(n++;n>0;n=Math.floor((n-1)/26))s=String.fromCharCode(65+(n-1)%26)+s;return s}
+function parseCSV(txt){txt=txt.replace(/^\uFEFF/,'');let first=txt.split(/\r?\n/,1)[0]||'',sep=first.includes('\t')?'\t':((first.match(/;/g)||[]).length>(first.match(/,/g)||[]).length?';':',');let rows=[],row=[],q=false,cell='';for(let i=0;i<txt.length;i++){let ch=txt[i],nx=txt[i+1];if(ch=='"'){if(q&&nx=='"'){cell+='"';i++}else q=!q}else if(!q&&ch==sep){row.push(cell);cell=''}else if(!q&&(ch=='\n'||ch=='\r')){if(ch=='\r'&&nx=='\n')i++;row.push(cell);if(row.some(x=>x!==''))rows.push(row);row=[];cell=''}else cell+=ch}row.push(cell);if(row.some(x=>x!==''))rows.push(row);return rows}
+function cellText(c,ss){let t=c.getAttribute('t'),v=c.getElementsByTagName('v')[0]?.textContent??'';if(t==='s')return ss[Number(v)]??'';if(t==='inlineStr')return [...c.getElementsByTagName('t')].map(x=>x.textContent).join('');return v}
+async function inflateRaw(u8){if(typeof DecompressionStream==='undefined')throw Error('当前浏览器不支持 xlsx 解压，请用新版 Edge/Chrome，或先另存为 CSV。');const ds=new DecompressionStream('deflate-raw');return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer())}
+async function unzip(buf){const u8=new Uint8Array(buf),dv=new DataView(buf);let e=-1;for(let i=u8.length-22;i>=Math.max(0,u8.length-66000);i--)if(dv.getUint32(i,true)===0x06054b50){e=i;break}if(e<0)throw Error('不是有效的 xlsx 文件');let n=dv.getUint16(e+10,true),off=dv.getUint32(e+16,true),files={},total=0;for(let k=0;k<n;k++){if(dv.getUint32(off,true)!==0x02014b50)break;let flag=dv.getUint16(off+8,true),m=dv.getUint16(off+10,true),cs=dv.getUint32(off+20,true),us=dv.getUint32(off+24,true),fn=dv.getUint16(off+28,true),ex=dv.getUint16(off+30,true),cm=dv.getUint16(off+32,true),lo=dv.getUint32(off+42,true);total+=us;if(total>512*1024*1024)throw Error('xlsx 解压后数据过大，已停止读取');let name=new TextDecoder(flag&2048?'utf-8':'utf-8').decode(u8.slice(off+46,off+46+fn));let lfn=dv.getUint16(lo+26,true),lex=dv.getUint16(lo+28,true),st=lo+30+lfn+lex,dat=u8.slice(st,st+cs);files[name]=m===0?dat:await inflateRaw(dat);off+=46+fn+ex+cm}return files}
+async function readXlsx(file){const files=await unzip(await file.arrayBuffer()),dec=new TextDecoder(),xml=s=>new DOMParser().parseFromString(dec.decode(files[s]),'text/xml'),tags=(doc,n)=>[...doc.getElementsByTagName(n)];let ss=[];if(files['xl/sharedStrings.xml']){tags(xml('xl/sharedStrings.xml'),'si').forEach(si=>ss.push([...si.getElementsByTagName('t')].map(t=>t.textContent).join('')))}let book=xml('xl/workbook.xml'),rels=xml('xl/_rels/workbook.xml.rels'),rid={};tags(rels,'Relationship').forEach(r=>rid[r.getAttribute('Id')]=r.getAttribute('Target'));let sheets=[];tags(book,'sheet').forEach(s=>{let id=s.getAttribute('r:id')||s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id'),p=rid[id];if(p){if(p.startsWith('/'))p=p.slice(1);else if(!p.startsWith('xl/'))p='xl/'+p}sheets.push({name:s.getAttribute('name')||('Sheet'+(sheets.length+1)),path:p})});return {sheets,files,ss}}
+function sheetRows(w,i){let sh=w.sheets[i];if(!sh||!sh.path||!w.files[sh.path])return [];let txt=new TextDecoder().decode(w.files[sh.path]),doc=new DOMParser().parseFromString(txt,'text/xml'),rows=[];[...doc.getElementsByTagName('row')].forEach(r=>{let arr=[];[...r.getElementsByTagName('c')].forEach(c=>{let ref=c.getAttribute('r')||'',m=ref.match(/[A-Z]+/),ci=arr.length;if(m){ci=[...m[0]].reduce((a,ch)=>a*26+ch.charCodeAt(0)-64,0)-1}arr[ci]=cellText(c,w.ss)});if(arr.some(v=>v!==undefined&&v!==''))rows.push(arr)});return rows}
+function isTimeHeader(h){let s=String(h||'').trim().toLowerCase().replace(/\s+/g,'');return /^(time|时间|秒|sec|second|s)$/.test(s)||/^(time|时间)[(（](s|sec|second|秒)[)）]$/.test(s)||/^(time|时间)[\/_-](s|sec|second|秒)$/.test(s)}function useRows(rows,name,sheetName,sheetIndex=0){if(!rows.length)throw Error('没有读到数据');let hi=-1;for(let i=0;i<Math.min(20,rows.length);i++){let non=rows[i].filter(v=>v!==undefined&&v!==''),header=non.length>1&&non.some(v=>!isNum(v));if(!header&&non.length===1&&!isNum(non[0])){let next=rows.slice(i+1).find(r=>r.some(v=>v!==undefined&&v!==''));header=!!next&&next.some(isNum)}if(header){hi=i;break}}let headers,data;if(hi>=0){headers=rows[hi].map((h,i)=>String(h||colName(i)).trim()||colName(i));data=rows.slice(hi+1)}else{let width=Math.max(...rows.map(r=>r.length),0);headers=Array.from({length:width},(_,i)=>'CH'+(i+1));data=rows}let timeColumns=new Set(headers.map((h,i)=>isTimeHeader(h)?i:-1).filter(i=>i>=0)),timeIdx=timeColumns.size?[...timeColumns][0]:-1,chans=[];headers.forEach((h,i)=>{if(!timeColumns.has(i))chans.push({name:h||colName(i),idx:i,values:[]})});data.forEach(r=>chans.forEach(ch=>ch.values.push(isNum(r[ch.idx])?Number(r[ch.idx]):NaN)));chans=chans.filter(c=>c.values.some(isFinite));if(!chans.length)throw Error('没有找到可用的数值通道');let totals={};chans.forEach(c=>totals[c.name]=(totals[c.name]||0)+1);chans.forEach(c=>{c.key='c'+c.idx;c.label=totals[c.name]>1?`${c.name} [${colName(c.idx)}列]`:c.name});let len=Math.max(...chans.map(c=>c.values.length),0),x=[],dtv=Number($('dt').value);if(!isFinite(dtv)||dtv<=0)dtv=state.dt>0?state.dt:.2;if(timeIdx>=0){for(let i=0;i<len;i++){let raw=data[i]?.[timeIdx],rowNo=(hi>=0?hi+2:1)+i;if(!isNum(raw))throw Error(`时间列第 ${rowNo} 行为空或不是数字`);let v=Number(raw);if(i&&v<=x[i-1])throw Error(`时间列必须严格递增，第 ${rowNo} 行不符合要求`);x.push(v)}}else for(let i=0;i<len;i++)x.push(i*dtv);state={...state,name,sheet:sheetName||name,sheetIndex,rows:data,headers,channels:chans.map((c,i)=>({...c,color:colors[i%colors.length]})),visible:{},baselines:{},view:'resistance',x,dt:dtv,hasTime:timeIdx>=0,timeHeader:timeIdx>=0?headers[timeIdx]:'Time(s)',x0:x[0]??0,x1:x.at(-1)??1,yr:null,fullYr:null,sel:null,hover:null,undo:[],redo:[],dirty:false};state.channels.forEach(c=>state.visible[c.key]=true);$('dt').disabled=state.hasTime;$('applyDt').disabled=state.hasTime;$('dtHint').textContent=state.hasTime?'当前 sheet 已包含有效时间列，采样间隔不会覆盖原时间。':'无时间列时自动按采样间隔生成横轴。';refreshYRange();$('fileName').textContent=name;clearDirty();buildChannels();fitAll();updateHistoryButtons();toast('数据已加载')}
+function buildChannels(){let box=$('channels');box.innerHTML='<div class="ch chHead"><span></span><span></span><span>通道</span><span class="ptTitle">点数</span><span class="baseTitle">基线设置</span></div>';state.channels.forEach((c,i)=>{let base=channelBaseline(c);let d=document.createElement('div');d.className='ch';d.innerHTML=`<input class="chOn" type="checkbox" ${state.visible[c.key]?'checked':''}><span class="sw" style="background:${c.color}"></span><span title="${esc(c.name)}">${esc(channelLabel(c))}</span><span class="ptCount">${c.values.length}</span><input class="baseInput" type="number" step="1" placeholder="基线" value="${isFinite(base)?Math.round(base):''}"><button class="baseBtn">均值</button>`;
+d.querySelector('.chOn').onchange=e=>{state.visible[c.key]=e.target.checked;refreshYRangeKeepingView();draw();updateStat()};
+let inp=d.querySelector('.baseInput');inp.onchange=()=>{let v=Number(inp.value);if(isFinite(v)&&v>0)setBaselineValue(c,Math.round(v));else{delete state.baselines[c.key];markDirty();afterBaselineChange(`${channelLabel(c)} 基线已清除`)}};let baseBtn=d.querySelector('.baseBtn');baseBtn.title='使用框选区间均值作为该通道基线';baseBtn.setAttribute('aria-label','使用框选区间均值作为该通道基线');baseBtn.onclick=()=>baselineFromChannel(c);box.appendChild(d)});updateBaselineUI();updateModeButtons();updateStat();$('empty').style.display=state.channels.length?'none':'flex'}
+function updateStat(){let on=state.channels.filter(c=>state.visible[c.key]).length,n=state.x.length,timeInfo=state.hasTime?'使用原时间列':`采样间隔 ${state.dt} s`;$('stat').textContent=`${on}/${state.channels.length} 个通道 · ${n} 个点 · ${timeInfo}`;let s=state.sel,label=viewLabel(),unit=viewUnit();$('rangeText').textContent=s?`已选 ${selectionChannelKeys().length} 个通道 · ${selectedCount()} 个点 · ${s.a.toFixed(1)}–${s.b.toFixed(1)} s · ${label} ${fmtDisplay(s.y0)}–${fmtDisplay(s.y1)} ${unit}`:'拖动曲线框选数据，单击图表清除选区。';document.body.classList.toggle('hasSelection',!!s);['applyOp','applyFilter','applyTimeAdjust','deleteSel','moveSelUp','moveSelDown'].forEach(id=>{let el=$(id);if(el)el.disabled=!s});let all=$('selectAllData');if(all)all.disabled=!state.channels.length;updateTimeAdjustHint()}
+function idx0(x){let a=0,b=state.x.length-1;while(a<b){let m=(a+b)>>1;if(state.x[m]<x)a=m+1;else b=m}return a}function idx1(x){let a=0,b=state.x.length-1;while(a<b){let m=(a+b+1)>>1;if(state.x[m]<=x)a=m;else b=m-1}return a}
+function plotBox(){let w=C.width,h=C.height,d=window.devicePixelRatio||1,cssW=w/d,left=Math.min(122,Math.max(112,cssW*.115)),right=18,top=18,bottom=48;return {l:left*d,t:top*d,r:w-right*d,b:h-bottom*d,w:w-(left+right)*d,h:h-(top+bottom)*d,d}}function sx(x,p){return p.l+(x-state.x0)/(state.x1-state.x0)*p.w}function ix(px,p){return state.x0+(px-p.l)/p.w*(state.x1-state.x0)}function sy(y,p,yr){return p.b-(y-yr[0])/(yr[1]-yr[0])*p.h}function crisp(v){return Math.round(v)+0.5}function px(d,n=1){return Math.max(1,Math.round(d*n))}
+function fmtOhm(v){return new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(v)}function viewLabel(){return state.view==='response'?'响应值':state.view==='percent'?'响应百分比':'电阻'}function viewUnit(){return state.view==='response'?'':state.view==='percent'?'%':'Ω'}function axisLabel(){return state.view==='response'?'响应值':state.view==='percent'?'响应百分比 (%)':'电阻 (Ω)'}
+function fmtResponse(v){return Number(Number(v).toFixed(6))}
+function fmtDisplay(v){if(!isFinite(v))return '--';if(state.view==='response')return String(fmtResponse(v));if(state.view==='percent')return String(Math.round(v));return fmtOhm(v)}
+function channelBaseline(c){let b=Number(state.baselines&&state.baselines[c.key]);return isFinite(b)&&b>0?b:NaN}function hasAnyBaseline(){return state.channels.some(c=>isFinite(channelBaseline(c)))}
+function displayValue(c,i){let v=c.values[i];if(!isFinite(v))return NaN;if(state.view==='resistance')return v;if(v===0)return NaN;let b=channelBaseline(c);if(!isFinite(b))return NaN;let r=b/v;return state.view==='response'?r:(r-1)*100}
+function exportValue(c,i,mode){let old=state.view;state.view=mode;let v=displayValue(c,i);state.view=old;if(!isFinite(v))return NaN;if(mode==='response')return fmtResponse(v);if(mode==='percent')return Math.round(v);return v}
+function updateModeButtons(){let ok=hasAnyBaseline();[['modeResistance','resistance'],['modeResponse','response'],['modePercent','percent']].forEach(([id,v])=>{let b=$(id);if(!b)return;b.disabled=v!=='resistance'&&!ok;b.classList.toggle('active',state.view===v)});let ex=$('exportDataMode');if(ex){[...ex.options].forEach(o=>o.disabled=o.value!=='resistance'&&!ok);if(!ok&&ex.value!=='resistance')ex.value='resistance'}if(!ok&&state.view!=='resistance')state.view='resistance';let zero=$('zeroRef'),wrap=$('zeroRefWrap');if(zero){zero.checked=state.includeZero;zero.disabled=state.view!=='resistance'}if(wrap)wrap.classList.toggle('disabled',state.view!=='resistance')}function setView(v){if(v!=='resistance'&&!hasAnyBaseline())return toast('请先设置至少一个通道基线');state.view=v;state.sel=null;refreshYRange();updateModeButtons();draw();updateStat()}function updateFullYRange(){let old=state.yr?state.yr.slice():null;refreshYRange();if(old)state.yr=old;limitYView()}
+function refreshYRangeKeepingView(){let old=state.yr?state.yr.slice():null;refreshYRange();if(old){let full=state.fullYr||old;state.fullYr=[Math.min(full[0],old[0]),Math.max(full[1],old[1])];state.yr=old}}
+function refreshYRange(){let y0=Infinity,y1=-Infinity;state.channels.forEach(c=>{if(!state.visible[c.key])return;for(let i=0;i<c.values.length;i++){let v=displayValue(c,i);if(isFinite(v)){if(v<y0)y0=v;if(v>y1)y1=v}}});if(!isFinite(y0)){state.fullYr=[0,1];state.yr=[0,1];return}if(y0===y1){y0-=1;y1+=1}let pad=Math.max((y1-y0)*.08,state.view==='response'?.02:state.view==='percent'?1:0),includeZero=state.view==='resistance'&&state.includeZero;state.fullYr=[includeZero?Math.min(0,y0-pad):y0-pad,includeZero?Math.max(0,y1+pad):y1+pad];state.yr=state.fullYr.slice()}function yRange(){if(!state.yr)refreshYRange();return state.yr||[0,1]}function iy(py,p,yr){return yr[1]-(py-p.t)/p.h*(yr[1]-yr[0])}function limitYView(){if(!state.fullYr)refreshYRange();let full=state.fullYr||[0,1],yr=state.yr||full.slice(),fullSpan=Math.max(full[1]-full[0],1e-9),minSpan=Math.max(fullSpan/100000,1e-9),maxSpan=fullSpan*1.05,span=yr[1]-yr[0],mid=(yr[0]+yr[1])/2;if(span<minSpan){yr=[mid-minSpan/2,mid+minSpan/2];span=minSpan}if(span>maxSpan){yr=[full[0],full[1]];span=yr[1]-yr[0]}if(yr[0]<full[0]){yr[1]+=full[0]-yr[0];yr[0]=full[0]}if(yr[1]>full[1]){yr[0]-=yr[1]-full[1];yr[1]=full[1]}if(yr[0]<full[0]||yr[1]>full[1]||yr[0]>=yr[1])yr=full.slice();state.yr=yr}
+function drawChannel(c,a,b,p,yr,maxPts){ctx.beginPath();let n=b-a+1,first=true,emit=i=>{let v=displayValue(c,i);if(!isFinite(v)){first=true;return}let x=sx(state.x[i],p),y=sy(v,p,yr);if(first){ctx.moveTo(x,y);first=false}else ctx.lineTo(x,y)};if(n<=maxPts){for(let i=a;i<=b;i++)emit(i)}else{let buckets=Math.max(1,Math.floor(maxPts/2)),size=Math.ceil(n/buckets);for(let s=a;s<=b;s+=size){let e=Math.min(b,s+size-1),minI=-1,maxI=-1,minV=Infinity,maxV=-Infinity;for(let i=s;i<=e;i++){let v=displayValue(c,i);if(!isFinite(v))continue;if(v<minV){minV=v;minI=i}if(v>maxV){maxV=v;maxI=i}}if(minI<0){first=true;continue}if(minI===maxI)emit(minI);else if(minI<maxI){emit(minI);emit(maxI)}else{emit(maxI);emit(minI)}}}ctx.stroke()}
+function niceTicks(lo,hi,target=7,whole=false){if(!isFinite(lo)||!isFinite(hi)||hi<=lo)return[lo];let span=hi-lo,raw=span/Math.max(2,target-1),mag=Math.pow(10,Math.floor(Math.log10(raw))),multipliers=[1,1.25,2,2.5,5,10],best=null;for(let scale of [mag/10,mag,mag*10])for(let m of multipliers){let step=m*scale;if(whole&&step<1)step=1;let first=Math.ceil((lo-step*1e-9)/step)*step,last=Math.floor((hi+step*1e-9)/step)*step,count=Math.max(0,Math.floor((last-first)/step+1.000001)),penalty=Math.abs(count-target)+(count<5||count>8?8:0)+(m===1.25?.08:0);if(!best||penalty<best.penalty||(penalty===best.penalty&&step>best.step))best={step,first,last,count,penalty}}let out=[];if(!best||!best.count)return[lo,hi];for(let i=0;i<best.count;i++){let value=best.first+i*best.step;if(Math.abs(value)<best.step*1e-10)value=0;out.push(whole?Math.round(value):value)}while(out.length>7){let lowGap=out[0]-lo,highGap=hi-out[out.length-1];if(lowGap<=highGap)out.shift();else out.pop()}return out}function draw(){const plotStyle=getComputedStyle(document.documentElement),paint=name=>plotStyle.getPropertyValue('--plot-'+name).trim();resizePending=false;ctx.imageSmoothingEnabled=false;let p=plotBox(),d=p.d;ctx.clearRect(0,0,C.width,C.height);ctx.fillStyle=paint('bg');ctx.fillRect(0,0,C.width,C.height);if(!state.channels.length)return;let yr=yRange();ctx.strokeStyle=paint('grid');ctx.lineWidth=px(d);ctx.font=`${12*d}px Segoe UI`;ctx.fillStyle=paint('text');ctx.textAlign='right';ctx.textBaseline='middle';let yTicks=niceTicks(yr[0],yr[1],7,state.view!=='response');for(let v of yTicks){let y=crisp(sy(v,p,yr));ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(p.r,y);ctx.stroke();ctx.fillText(fmtDisplay(v),p.l-9*d,y)}ctx.textAlign='center';ctx.textBaseline='top';let xTicks=niceTicks(state.x0,state.x1,7,false);for(let v of xTicks){let x=crisp(sx(v,p));ctx.beginPath();ctx.moveTo(x,p.t);ctx.lineTo(x,p.b);ctx.stroke();ctx.fillText(v.toFixed(1),x,p.b+8*d)}let ref=state.view==='response'?1:0;if((state.view!=='resistance'||state.includeZero)&&yr[0]<ref&&yr[1]>ref){let zy=sy(ref,p,yr);ctx.save();ctx.setLineDash([4*d,5*d]);ctx.strokeStyle=paint('reference');ctx.lineWidth=px(d);ctx.beginPath();ctx.moveTo(p.l,zy);ctx.lineTo(p.r,zy);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle=paint('reference-text');ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(state.view==='response'?'1.00':(state.view==='percent'?'0%':'0 Ω'),p.l+6*d,zy-4*d);ctx.restore()}ctx.save();ctx.beginPath();ctx.rect(p.l,p.t,p.w,p.h);ctx.clip();let a=idx0(state.x0),b=idx1(state.x1),maxPts=Math.max(1000,Math.floor(p.w/d*2));state.channels.forEach(c=>{if(!state.visible[c.key])return;ctx.strokeStyle=c.color;ctx.lineWidth=px(d);ctx.lineCap='butt';ctx.lineJoin='miter';drawChannel(c,a,b,p,yr,maxPts)});if(state.sel){ctx.fillStyle=paint('selection');ctx.strokeStyle=paint('selection-line');let x1=sx(state.sel.a,p),x2=sx(state.sel.b,p),yTop=sy(state.sel.y1,p,yr),yBot=sy(state.sel.y0,p,yr);ctx.fillRect(x1,yTop,x2-x1,yBot-yTop);ctx.strokeRect(x1,yTop,x2-x1,yBot-yTop);if(selectedCount()===1){ctx.save();ctx.lineWidth=px(d);ctx.strokeStyle=paint('point');state.channels.forEach(c=>{let set=state.sel.members&&state.sel.members[c.key];if(!set)return;set.forEach(i=>{let v=displayValue(c,i);if(!isFinite(v))return;ctx.beginPath();ctx.arc(sx(state.x[i],p),sy(v,p,yr),5*d,0,Math.PI*2);ctx.stroke()})});ctx.restore()}}if(drag&&drag.kind==='select'){ctx.fillStyle=paint('drag');ctx.strokeStyle=paint('drag-line');let x=Math.min(drag.x,drag.cx),y=Math.min(drag.y,drag.cy),w=Math.abs(drag.cx-drag.x),h=Math.abs(drag.cy-drag.y);ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h)}ctx.restore();ctx.strokeStyle=paint('axis');ctx.lineWidth=px(d);ctx.strokeRect(crisp(p.l),crisp(p.t),Math.round(p.w),Math.round(p.h));ctx.fillStyle=paint('label');ctx.textAlign='center';ctx.fillText('时间 (s)',p.l+p.w/2,C.height-20*d);ctx.save();ctx.translate(20*d,p.t+p.h/2);ctx.rotate(-Math.PI/2);ctx.fillText(axisLabel(),0,0);ctx.restore()}let resizePending=false;function reqDraw(){if(!resizePending){resizePending=true;requestAnimationFrame(draw)}}
+function updateCursor(e){let box=$('cursorReadout');if(!box)return;box.style.display='flex';if(!state.channels.length){box.textContent='时间 -- / 电阻 --';return}let p=plotBox(),x=e.offsetX*p.d,y=e.offsetY*p.d;if(x<p.l||x>p.r||y<p.t||y>p.b){box.textContent='时间 -- / '+viewLabel()+' --';return}let xv=ix(x,p),i=idx0(xv);if(i>0&&Math.abs(state.x[i-1]-xv)<Math.abs(state.x[i]-xv))i--;let best=null,dist=Infinity,yr=yRange();state.channels.forEach(c=>{if(!state.visible[c.key])return;let v=displayValue(c,i);if(!isFinite(v))return;let d=Math.abs(sy(v,p,yr)-y);if(d<dist){dist=d;best={c,v}}});if(best){let unit=viewUnit();box.textContent=`${channelLabel(best.c)}  ${fmtDisplay(best.v)}${unit?(' '+unit):''} / 时间 ${state.x[i].toFixed(1)} s / 第 ${i+1} 点`}else{let yv=iy(y,p,yr),unit=viewUnit();box.textContent=`时间 ${xv.toFixed(1)} s / ${viewLabel()} ${fmtDisplay(yv)}${unit?(' '+unit):''}`}}
+function selectionHit(x,y,p){if(!state.sel)return false;let yr=yRange(),x1=Math.min(sx(state.sel.a,p),sx(state.sel.b,p)),x2=Math.max(sx(state.sel.a,p),sx(state.sel.b,p)),y1=sy(state.sel.y1,p,yr),y2=sy(state.sel.y0,p,yr),pad=4*p.d;return x>=x1-pad&&x<=x2+pad&&y>=Math.min(y1,y2)-pad&&y<=Math.max(y1,y2)+pad}
+function selectionItems(){let items=[];if(!state.sel)return items;state.channels.forEach(c=>{let set=state.sel.members&&state.sel.members[c.key];if(!set)return;set.forEach(i=>{let old=c.values[i];if(isFinite(old))items.push([c,i,old])})});return items}
+function shiftedRawValue(c,old,delta){if(!isFinite(old))return NaN;if(state.view==='resistance')return old+delta;let b=channelBaseline(c);if(!isFinite(b)||old===0)return NaN;let cur=state.view==='response'?b/old:(b/old-1)*100,next=cur+delta,den=state.view==='response'?next:(1+next/100);return den>0?b/den:NaN}
+function previewSelectionShift(items,delta){items.forEach(([c,i,old])=>{let nv=shiftedRawValue(c,old,delta);c.values[i]=isFinite(nv)?nv:old});updateSelectionBounds();draw();updateStat()}
+function finishSelectionShift(items,delta){previewSelectionShift(items,delta);let changed=[];items.forEach(([c,i,old])=>{let nv=c.values[i];if(isFinite(nv)&&nv!==old)changed.push([c,i,old,nv])});if(changed.length){pushChange(changed);updateFullYRange();draw();updateStat()}return changed.length}
+function nudgeSelection(dir,fast=false){try{if(!state.sel)throw Error('请先框选数据');let items=selectionItems();if(!items.length)throw Error('框选区间没有可移动数据');let yr=yRange(),step=(yr[1]-yr[0])/(fast?25:120),n=finishSelectionShift(items,dir*step);if(n)toast(`已移动 ${n} 个数据点`)}catch(e){toast(e.message)}}
+function hideCursor(){let box=$('cursorReadout');if(box){box.style.display='flex';box.textContent='时间 -- / '+viewLabel()+' --'}}
+function trackDrag(clientX,clientY){if(!drag)return;let rect=C.getBoundingClientRect(),p=plotBox(),x=(clientX-rect.left)*p.d,y=(clientY-rect.top)*p.d;x=Math.max(p.l,Math.min(p.r,x));y=Math.max(p.t,Math.min(p.b,y));if(Math.abs(x-drag.x)+Math.abs(y-drag.y)>0)drag.moved=true;drag.cx=x;drag.cy=y;if(drag.kind==='moveSel'){let delta=iy(y,p,drag.yr)-iy(drag.y,p,drag.yr);drag.delta=delta;previewSelectionShift(drag.items,delta)}else reqDraw()}
+C.addEventListener('mousedown',e=>{if(!state.channels.length)return;let p=plotBox(),rawX=e.offsetX*p.d,rawY=e.offsetY*p.d,inside=rawX>=p.l&&rawX<=p.r&&rawY>=p.t&&rawY<=p.b,x=Math.max(p.l,Math.min(p.r,rawX)),y=Math.max(p.t,Math.min(p.b,rawY));if(inside&&selectionHit(x,y,p)){let items=selectionItems();if(items.length){drag={kind:'moveSel',x,y,cx:x,cy:y,moved:false,yr:yRange(),items,delta:0};hideSelPicker();return}}drag={kind:'select',x,y,cx:x,cy:y,moved:false,yr:yRange()}});
+C.addEventListener('mousemove',e=>{updateCursor(e);let p=plotBox(),x=Math.max(p.l,Math.min(p.r,e.offsetX*p.d)),y=Math.max(p.t,Math.min(p.b,e.offsetY*p.d));if(!drag){C.style.cursor=selectionHit(x,y,p)?'ns-resize':'crosshair';return}trackDrag(e.clientX,e.clientY)});
+addEventListener('mousemove',e=>{if(drag&&e.target!==C)trackDrag(e.clientX,e.clientY)});
+C.addEventListener('mouseleave',()=>{if(!drag)C.style.cursor='default';hideCursor()});
+addEventListener('mouseup',()=>{if(!drag)return;let p=plotBox();if(drag.kind==='moveSel'){let n=0;if(drag.moved)n=finishSelectionShift(drag.items,drag.delta||0);if(n)toast(`已移动 ${n} 个数据点`);drag=null;draw();return}let dx=Math.abs(drag.cx-drag.x),dy=Math.abs(drag.cy-drag.y);if(drag.moved||dx>0||dy>0){let xA=Math.min(drag.x,drag.cx),xB=Math.max(drag.x,drag.cx),yA=Math.min(drag.y,drag.cy),yB=Math.max(drag.y,drag.cy),pad=10*p.d;if(dx<pad){xA-=pad;xB+=pad}if(dy<pad){yA-=pad;yB+=pad}xA=Math.max(p.l,Math.min(p.r,xA));xB=Math.max(p.l,Math.min(p.r,xB));yA=Math.max(p.t,Math.min(p.b,yA));yB=Math.max(p.t,Math.min(p.b,yB));let a=ix(xA,p),b=ix(xB,p),ya=iy(yB,p,drag.yr),yb=iy(yA,p,drag.yr);setSelection(Math.max(state.x[0],a),Math.min(state.x.at(-1),b),Math.min(ya,yb),Math.max(ya,yb));if(!selectedCount()){state.sel=null;hideSelPicker();toast('框选区间没有命中数据')}else showSelPicker(drag.cx,drag.cy,p);updateStat()}else{state.sel=null;hideSelPicker();updateStat()}drag=null;draw()});document.addEventListener('keydown',e=>{let tag=(e.target&&e.target.tagName||'').toLowerCase(),typing=tag==='input'||tag==='select'||tag==='textarea',key=e.key.toLowerCase(),cmd=e.ctrlKey||e.metaKey;if(!typing&&!e.altKey&&cmd){if(key==='z'){e.preventDefault();e.shiftKey?redo():undo();return}if(key==='y'){e.preventDefault();redo();return}if(key==='a'&&state.channels.length){e.preventDefault();selectAllVisibleData();return}if(key==='s'){e.preventDefault();exportXlsx();return}if(key==='o'){e.preventDefault();$('file').click();return}}if(typing||tag==='button'||cmd||e.altKey)return;if(e.key==='Delete'||e.key==='Backspace'){if(!state.sel)return;e.preventDefault();deleteSelected();return}if(e.key==='Escape'){let handled=false;if($('aboutModal').classList.contains('show')){$('aboutModal').classList.remove('show');handled=true}if($('side').classList.contains('open')){$('side').classList.remove('open');handled=true}if(state.sel){state.sel=null;hideSelPicker();draw();updateStat();handled=true}if(handled)e.preventDefault();return}if(e.key==='Home'){if(!state.channels.length)return;e.preventDefault();fitAll();return}if(e.key==='F1'){e.preventDefault();$('aboutModal').classList.add('show');return}if(e.key==='ArrowUp'||e.key==='ArrowDown'){if(!state.sel)return;e.preventDefault();hideSelPicker();nudgeSelection(e.key==='ArrowUp'?1:-1,e.shiftKey)}});
+function limitView(){let min=state.x[0]||0,max=state.x.at(-1)||1,span=state.x1-state.x0,full=Math.max(max-min,1e-9),minSpan=Math.max(full/100000,1e-9),mid=(state.x0+state.x1)/2;if(span<minSpan){state.x0=mid-minSpan/2;state.x1=mid+minSpan/2;span=minSpan}if(span>full){state.x0=min;state.x1=max}else{if(state.x0<min){state.x1+=min-state.x0;state.x0=min}if(state.x1>max){state.x0-=state.x1-max;state.x1=max}}}
+function fitAll(){if(!state.x.length)return;state.x0=state.x[0];state.x1=state.x.at(-1);if(state.x0===state.x1)state.x1=state.x0+1;refreshYRange();draw();updateStat()}
+function targetChannels(){return state.channels.filter(c=>state.visible[c.key])}function rangeIdx(){if(!state.sel)throw Error('请先框选一段曲线');let a=idx0(state.sel.a),b=idx1(state.sel.b);if(b<a)throw Error('框选区间没有数据点');return [a,b]}function setSelection(a,b,y0,y1){let members={},count=0;targetChannels().forEach(c=>{let set=new Set();for(let i=idx0(a);i<=idx1(b);i++){let v=displayValue(c,i);if(isFinite(v)&&v>=y0&&v<=y1){set.add(i);count++}}if(set.size)members[c.key]=set});state.sel={a,b,y0,y1,members,count};updateSelectionBounds()}function selectAllVisibleData(){try{if(!state.channels.length)throw Error('请先加载数据');let members={},count=0;targetChannels().forEach(c=>{let set=new Set();c.values.forEach((v,i)=>{if(isFinite(displayValue(c,i))){set.add(i);count++}});if(set.size)members[c.key]=set});if(!count)throw Error('当前显示通道没有可选数据');state.sel={a:state.x[0]||0,b:state.x.at(-1)||0,y0:0,y1:1,members,count};updateSelectionBounds();hideSelPicker();draw();updateStat();toast(`已全选 ${count} 个数据点`)}catch(e){toast(e.message)}}function updateSelectionBounds(){if(!state.sel)return;let y0=Infinity,y1=-Infinity,a=Infinity,b=-Infinity,count=0;state.channels.forEach(c=>{let set=state.sel.members&&state.sel.members[c.key];if(!set)return;set.forEach(i=>{let v=displayValue(c,i);if(isFinite(v)){if(v<y0)y0=v;if(v>y1)y1=v;if(state.x[i]<a)a=state.x[i];if(state.x[i]>b)b=state.x[i];count++}})});state.sel.count=count;if(isFinite(a)){state.sel.a=a;state.sel.b=b}if(isFinite(y0)){if(y0===y1){y0-=1;y1+=1}let pad=Math.max((y1-y0)*.04,state.view==='percent'?1:0);state.sel.y0=y0-pad;state.sel.y1=y1+pad}}function inSel(c,i){let set=state.sel&&state.sel.members&&state.sel.members[c.key];return !!(set&&set.has(i))}function selectedCount(){return state.sel?state.sel.count||0:0}function hideSelPicker(){let p=$('selPicker');if(p)p.style.display='none'}function selectionChannelKeys(){return Object.keys(state.sel?.members||{}).filter(k=>state.sel.members[k]&&state.sel.members[k].size)}function showSelPicker(devX,devY,p){let box=$('selPicker');if(!box||!state.sel)return;let keys=selectionChannelKeys();if(keys.length<2){hideSelPicker();return}let candidates={};keys.forEach(k=>candidates[k]=state.sel.members[k]);box.innerHTML='<div class="selPickerHead"><strong>应用到通道</strong><button type="button" class="selPickerClose" aria-label="关闭">×</button></div><label class="selOption selAll"><input type="checkbox" data-all checked><span>全选命中通道</span></label>'+keys.map(k=>{let c=state.channels.find(x=>x.key===k);return '<label class="selOption"><input type="checkbox" data-ch="'+esc(k)+'" checked><span class="selOptionSwatch" style="background:'+c.color+'"></span><span>'+esc(channelLabel(c))+'</span></label>'}).join('');let all=box.querySelector('[data-all]'),items=[...box.querySelectorAll('[data-ch]')],applyChecked=changed=>{let checked=items.filter(x=>x.checked);if(!checked.length){changed.checked=true;checked=[changed];toast('至少保留一个通道')}state.sel.members={};checked.forEach(input=>state.sel.members[input.dataset.ch]=candidates[input.dataset.ch]);all.checked=checked.length===items.length;all.indeterminate=checked.length>0&&checked.length<items.length;updateSelectionBounds();draw();updateStat()};items.forEach(input=>input.onchange=()=>applyChecked(input));all.onchange=()=>{items.forEach(input=>input.checked=all.checked);if(!all.checked&&items.length)items[0].checked=true;applyChecked(items.find(input=>input.checked)||items[0])};box.querySelector('.selPickerClose').onclick=hideSelPicker;box.onmousedown=e=>e.stopPropagation();box.style.display='block';box.style.visibility='hidden';box.style.left='0px';box.style.top='0px';let w=Math.min(box.offsetWidth||190,Math.max(150,C.clientWidth-16)),h=Math.min(box.offsetHeight||190,Math.max(80,C.clientHeight-16)),baseX=devX/p.d,baseY=devY/p.d,x=baseX+12,y=baseY+12;if(x+w>C.clientWidth-8)x=baseX-w-12;if(y+h>C.clientHeight-8)y=baseY-h-12;x=Math.max(8,Math.min(Math.max(8,C.clientWidth-w-8),x));y=Math.max(8,Math.min(Math.max(8,C.clientHeight-h-8),y));box.style.left=x+'px';box.style.top=y+'px';box.style.visibility='visible'}document.addEventListener('mousedown',e=>{let box=$('selPicker');if(box&&box.style.display!=='none'&&!box.contains(e.target)&&e.target!==C)hideSelPicker()});function updateBaselineUI(){let n=state.channels.filter(c=>isFinite(channelBaseline(c))).length;let ok=hasAnyBaseline();let ex=$('exportDataMode');if(ex){[...ex.options].forEach(o=>o.disabled=o.value!=='resistance'&&!ok);if(!ok&&ex.value!=='resistance')ex.value='resistance'}}function afterBaselineChange(msg){let oldYr=state.yr?state.yr.slice():null,oldX0=state.x0,oldX1=state.x1;if(state.view==='resistance'){updateModeButtons();buildChannels();state.x0=oldX0;state.x1=oldX1;if(oldYr)state.yr=oldYr}else{updateModeButtons();updateFullYRange();buildChannels()}draw();updateStat();if(msg)toast(msg)}function setBaselineValue(ch,val){if(!ch)throw Error('请先加载数据');val=Math.round(Number(val));if(!isFinite(val)||val<=0)throw Error('请输入大于 0 的基线电阻');state.baselines[ch.key]=val;markDirty();afterBaselineChange(`${channelLabel(ch)} 基线已设置为 ${fmtOhm(val)} Ω`)}function baselineFromChannel(ch){try{if(!ch)throw Error('请先加载数据');if(!state.sel)throw Error('请先框选一段基线区间');let set=state.sel.members&&state.sel.members[ch.key];if(!set||!set.size)throw Error(`${channelLabel(ch)} 未命中框选区间`);let vals=[...set].map(i=>ch.values[i]).filter(isFinite);if(!vals.length)throw Error('框选区间没有有效电阻值');setBaselineValue(ch,vals.reduce((a,b)=>a+b,0)/vals.length)}catch(e){toast(e.message)}}function pushChange(items){if(items.length){state.undo.push(items);state.redo=[];updateHistoryButtons();markDirty()}}
+function compileFormula(expr){expr=String(expr||'').trim().replace(/X/g,'x');if(!expr)throw Error('请输入公式');if(!/^[0-9x+\-*/().\s]+$/.test(expr))throw Error('公式仅支持 x、数字、括号和 + - * /');let fn;try{fn=new Function('x','"use strict";return ('+expr+')')}catch(e){throw Error('公式格式不正确')}let test=fn(1);if(!isFinite(test))throw Error('公式计算结果无效');return x=>fn(x)}
+function newFormulaId(){return globalThis.crypto?.randomUUID?.()||('f'+Date.now().toString(36)+Math.random().toString(36).slice(2))}
+function cleanFormulaRecord(item,index=0){let name=String(item?.name??`公式${index+1}`).trim().slice(0,40),expression=String(item?.expression??item?.formula??'').trim().slice(0,300);if(!name||!expression)return null;try{compileFormula(expression)}catch(e){return null}return {id:String(item?.id||newFormulaId()),name,expression}}
+function loadFormulaLibrary(){try{let raw=localStorage.getItem(FORMULA_LIBRARY_KEY),data=raw?JSON.parse(raw):[],list=Array.isArray(data)?data:data.formulas;savedFormulas=(Array.isArray(list)?list:[]).map(cleanFormulaRecord).filter(Boolean).slice(0,500)}catch(e){savedFormulas=[]}refreshFormulaLibrary()}
+function persistFormulaLibrary(){try{localStorage.setItem(FORMULA_LIBRARY_KEY,JSON.stringify({version:1,formulas:savedFormulas}))}catch(e){toast('浏览器未允许持久保存，公式仅在本次打开期间可用')}}
+function nextFormulaName(){let names=new Set(savedFormulas.map(f=>f.name));for(let i=1;i<10000;i++){let name=`公式${i}`;if(!names.has(name))return name}return `公式${savedFormulas.length+1}`}
+function refreshFormulaLibrary(selectedId=activeFormulaId,expanded=false){let select=$('savedFormula');if(!select)return;if(selectedId&&!savedFormulas.some(f=>f.id===selectedId))selectedId='';activeFormulaId=selectedId;select.innerHTML='<option value="">选择已保存公式</option>'+savedFormulas.map(f=>`<option value="${esc(f.id)}" title="${esc(f.expression)}">${esc(expanded?`${f.name} — ${f.expression}`:f.name)}</option>`).join('');select.value=activeFormulaId;let hasActive=!!activeFormulaId,hasAny=!!savedFormulas.length;['formulaUpdate','formulaRename','formulaDelete'].forEach(id=>{let el=$(id);if(el)el.disabled=!hasActive});let ex=$('formulaExport');if(ex)ex.disabled=!hasAny}
+function currentFormulaExpression(){let expression=String($('operand')?.value||'').trim();compileFormula(expression);formulaDraft=expression;return expression}
+function saveNewFormula(){try{let expression=currentFormulaExpression(),fallback=nextFormulaName(),name=prompt('公式名称',fallback);if(name===null)return;name=String(name).trim().slice(0,40)||fallback;let existing=savedFormulas.find(f=>f.name.toLowerCase()===name.toLowerCase());if(existing){if(!confirm(`已存在“${name}”，是否用当前公式覆盖？`))return;existing.expression=expression;activeFormulaId=existing.id}else{let item={id:newFormulaId(),name,expression};savedFormulas.push(item);activeFormulaId=item.id}persistFormulaLibrary();refreshFormulaLibrary();toast(`公式“${name}”已保存`)}catch(e){toast(e.message)}}
+function updateSavedFormula(){try{let item=savedFormulas.find(f=>f.id===activeFormulaId);if(!item)throw Error('请先选择一个已保存公式');item.expression=currentFormulaExpression();persistFormulaLibrary();refreshFormulaLibrary(item.id);toast(`公式“${item.name}”已更新`)}catch(e){toast(e.message)}}
+function renameSavedFormula(){let item=savedFormulas.find(f=>f.id===activeFormulaId);if(!item)return toast('请先选择一个已保存公式');let name=prompt('重命名公式',item.name);if(name===null)return;name=String(name).trim().slice(0,40);if(!name)return toast('公式名称不能为空');if(savedFormulas.some(f=>f.id!==item.id&&f.name.toLowerCase()===name.toLowerCase()))return toast('公式名称已存在');item.name=name;persistFormulaLibrary();refreshFormulaLibrary(item.id);toast('公式已重命名')}
+function deleteSavedFormula(){let item=savedFormulas.find(f=>f.id===activeFormulaId);if(!item)return toast('请先选择一个已保存公式');if(!confirm(`删除公式“${item.name}”？`))return;savedFormulas=savedFormulas.filter(f=>f.id!==item.id);activeFormulaId='';persistFormulaLibrary();refreshFormulaLibrary();toast('公式已删除')}
+function exportFormulaLibrary(){if(!savedFormulas.length)return toast('还没有可导出的公式');let data={app:'ResiScope',version:1,exportedAt:new Date().toISOString(),formulas:savedFormulas.map(({name,expression})=>({name,expression}))};downloadBlob(new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'}),'ResiScope-formulas.json');toast(`已导出 ${savedFormulas.length} 个公式`)}
+async function importFormulaLibraryFile(file){try{if(!file)return;let data=JSON.parse((await file.text()).replace(/^\uFEFF/,'')),list=Array.isArray(data)?data:data.formulas;if(!Array.isArray(list))throw Error('不是有效的 ResiScope 公式库');let valid=list.map(cleanFormulaRecord).filter(Boolean).slice(0,500),invalid=list.length-valid.length;if(!valid.length)throw Error('文件中没有有效公式');let added=0,updated=0;valid.forEach(incoming=>{let old=savedFormulas.find(f=>f.name.toLowerCase()===incoming.name.toLowerCase());if(old){old.expression=incoming.expression;updated++}else{savedFormulas.push({...incoming,id:newFormulaId()});added++}});persistFormulaLibrary();activeFormulaId=(savedFormulas.find(f=>f.name.toLowerCase()===valid[0].name.toLowerCase())||{}).id||'';refreshFormulaLibrary();let item=savedFormulas.find(f=>f.id===activeFormulaId);if(item){formulaDraft=item.expression;$('operand').value=item.expression}toast(`已导入 ${added} 个，更新 ${updated} 个${invalid?`，跳过 ${invalid} 个无效项`:''}`)}catch(e){toast('导入失败：'+e.message)}}
+function toggleFormulaMenu(force){let menu=$('formulaManageMenu'),button=$('formulaMore');if(!menu)return;let open=force===undefined?menu.hidden:!!force;menu.hidden=!open;if(button){button.classList.toggle('isActive',open);button.setAttribute('aria-expanded',String(open))}}
+function prepareFormulaInput(force=false){let inp=$('operand'),library=$('formulaLibrary');if(!inp)return;if(force||!inp.value||inp.value==='1.0')inp.value=formulaDraft;inp.placeholder='(x + 0) * 1 / 1';if(library)library.hidden=false}
+function applyFormula(){try{prepareFormulaInput();let [a,b]=rangeIdx(),fn=compileFormula($('operand').value),items=[];formulaDraft=$('operand').value.trim();targetChannels().forEach(c=>{for(let i=a;i<=b;i++){let old=c.values[i];if(!inSel(c,i))continue;let nv=fn(old);if(!isFinite(nv)||nv===old)continue;items.push([c,i,old,c.values[i]=nv])}});pushChange(items);updateSelectionBounds();updateFullYRange();draw();updateStat();toast(`已修改 ${items.length} 个数据`)}catch(e){toast(e.message)}}
+function cloneSelection(sel){if(!sel)return null;let members={};Object.entries(sel.members||{}).forEach(([key,set])=>members[key]=new Set(set));return {...sel,members}}
+function viewSnapshot(){return {x0:state.x0,x1:state.x1,yr:state.yr?state.yr.slice():null}}
+function commonTimeStep(){if(!state.hasTime&&isFinite(state.dt)&&state.dt>0)return state.dt;let diffs=[];for(let i=1;i<state.x.length;i++){let d=state.x[i]-state.x[i-1];if(isFinite(d)&&d>0)diffs.push(d);if(diffs.length>=2000)break}if(!diffs.length)return isFinite(state.dt)&&state.dt>0?state.dt:.2;diffs.sort((a,b)=>a-b);return diffs[Math.floor(diffs.length/2)]}
+function syncTimeAxisLength(length,allowShrink=false){length=Math.max(1,length);if(state.x.length>length){if(allowShrink)state.x=state.x.slice(0,length);return}if(state.x.length===length)return;let step=commonTimeStep(),last=state.x.length?state.x.at(-1):0;while(state.x.length<length){last=Number((last+step).toPrecision(15));state.x.push(last)}}
+function linearResample(values,length){if(length===values.length)return values.map(v=>Math.round(v));if(values.length===1)return Array(length).fill(Math.round(values[0]));let out=[];for(let i=0;i<length;i++){let pos=i*(values.length-1)/(length-1),lo=Math.floor(pos),hi=Math.min(values.length-1,Math.ceil(pos)),t=pos-lo;out.push(Math.round(values[lo]+(values[hi]-values[lo])*t))}return out}
+function peakResample(values,length){let n=values.length;if(length>=n)return values.map(v=>Math.round(v));if(length===2)return [Math.round(values[0]),Math.round(values[n-1])];let out=[values[0]],every=(n-2)/(length-2),a=0;for(let i=0;i<length-2;i++){let avgStart=Math.floor((i+1)*every)+1,avgEnd=Math.min(n,Math.floor((i+2)*every)+1);if(avgStart>=n){avgStart=n-1;avgEnd=n}let avgX=0,avgY=0,avgLen=Math.max(1,avgEnd-avgStart);for(let j=avgStart;j<avgEnd;j++){avgX+=j;avgY+=values[j]}avgX/=avgLen;avgY/=avgLen;let start=Math.floor(i*every)+1,end=Math.min(n-1,Math.floor((i+1)*every)+1);if(end<=start)end=Math.min(n-1,start+1);let ax=a,ay=values[a],maxArea=-1,next=start;for(let j=start;j<end;j++){let area=Math.abs((ax-avgX)*(values[j]-ay)-(ax-j)*(avgY-ay));if(area>maxArea){maxArea=area;next=j}}out.push(values[next]);a=next}out.push(values[n-1]);return out.map(v=>Math.round(v))}
+function updateTimeAdjustHint(){let hint=$('timeAdjustHint');if(!hint)return;if(!state.sel){hint.textContent='按框选横向范围处理所选通道的连续曲线段。';return}let amount=Math.max(1,Math.round(Number($('timeAdjustPoints')?.value)||1)),mode=$('timeAdjustMode')?.value||'extend',keys=selectionChannelKeys(),range;try{range=rangeIdx()}catch(e){hint.textContent='请先框选要调整的曲线。';return}let old=Math.max(1,range[1]-range[0]+1),next=mode==='extend'?old+amount:old-amount,step=commonTimeStep();if(next<2){hint.textContent=`当前区间 ${old} 点，最多可减少 ${Math.max(0,old-2)} 点。`;return}hint.textContent=`${keys.length} 个通道：${old} → ${next} 点，约 ${((old-1)*step).toFixed(1)} → ${((next-1)*step).toFixed(1)} s。`}
+function restoreTimeAdjust(action,redoing){action.plans.forEach(plan=>{let remove=redoing?plan.before.length:plan.after.length,insert=redoing?plan.after:plan.before;plan.c.values.splice(plan.start,remove,...insert)});state.x=(redoing?action.afterX:action.beforeX).slice();state.sel=cloneSelection(redoing?action.afterSel:action.beforeSel);let view=redoing?action.afterView:action.beforeView;state.x0=view.x0;state.x1=view.x1;state.yr=view.yr?view.yr.slice():null;refreshYRangeKeepingView();limitView();buildChannels();draw();updateStat()}
+function applyTimeAdjust(){
+  try{
+    if(!state.sel)throw Error('请先框选要调整的曲线');
+    let amount=Math.round(Number($('timeAdjustPoints').value)),mode=$('timeAdjustMode').value;
+    if(!isFinite(amount)||amount<1)throw Error('点数必须是大于 0 的整数');
+    if(amount>1000000)throw Error('单次调整不能超过 1,000,000 个点');
+    let [a,b]=rangeIdx(),keys=selectionChannelKeys(),channels=state.channels.filter(c=>keys.includes(c.key));
+    if(!channels.length)throw Error('框选区间没有可调整的通道');
+    let beforeMax=Math.max(...state.channels.map(c=>c.values.length)),plans=channels.map(c=>{
+      let start=Math.min(a,c.values.length-1),end=Math.min(b,c.values.length-1);
+      if(start<0||end<start)throw Error(`${channelLabel(c)} 在该时间范围内没有数据`);
+      let before=c.values.slice(start,end+1);
+      if(before.some(v=>!isFinite(v)))throw Error(`${channelLabel(c)} 的调整区间包含空白或非数字数据`);
+      let length=mode==='extend'?before.length+amount:before.length-amount;
+      if(length<2)throw Error(`${channelLabel(c)} 当前区间只有 ${before.length} 点，至少需要保留 2 点`);
+      let after=mode==='extend'?linearResample(before,length):peakResample(before,length);
+      return {c,start,before,after}
+    }),beforeX=state.x.slice(),beforeSel=cloneSelection(state.sel),beforeView=viewSnapshot();
+    plans.forEach(plan=>plan.c.values.splice(plan.start,plan.before.length,...plan.after));
+    let afterMax=Math.max(...state.channels.map(c=>c.values.length));
+    syncTimeAxisLength(afterMax,mode==='compress'&&beforeMax===beforeX.length);
+    let members={},count=0;
+    plans.forEach(plan=>{let set=new Set();for(let i=0;i<plan.after.length;i++){set.add(plan.start+i);count++}members[plan.c.key]=set});
+    state.sel={a:0,b:0,y0:0,y1:1,members,count};
+    updateSelectionBounds();refreshYRangeKeepingView();limitView();buildChannels();draw();updateStat();
+    let action={kind:'timeAdjust',mode,amount,plans,beforeX,afterX:state.x.slice(),beforeSel,afterSel:cloneSelection(state.sel),beforeView,afterView:viewSnapshot()};
+    state.undo.push(action);state.redo=[];updateHistoryButtons();markDirty();
+    toast(`${mode==='extend'?'已拉长':'已缩短'} ${channels.length} 个通道，每段 ${mode==='extend'?'+':'-'}${amount} 点`)
+  }catch(e){toast(e.message)}
+}
+function median(arr){let a=arr.filter(isFinite).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}function avg(arr){let a=arr.filter(isFinite);return a.length?a.reduce((m,v)=>m+v,0)/a.length:NaN}function gauss(seg){let n=seg.length,mid=(n-1)/2,sigma=Math.max(n/5,1),sum=0,ws=0;for(let i=0;i<n;i++){let v=seg[i];if(!isFinite(v))continue;let w=Math.exp(-0.5*Math.pow((i-mid)/sigma,2));sum+=v*w;ws+=w}return ws?sum/ws:NaN}function edgeSmooth(seg,center){let v=seg[center];if(!isFinite(v))return NaN;let l=seg[Math.max(0,center-1)],r=seg[Math.min(seg.length-1,center+1)],vals=[v];if(isFinite(l)&&Math.abs(l-v)<Math.abs(v)*.08+1)vals.push(l);if(isFinite(r)&&Math.abs(r-v)<Math.abs(v)*.08+1)vals.push(r);return avg(vals)}
+function applyFilter(){try{let [a,b]=rangeIdx(),w=Math.min(1001,Math.max(3,Number($('filterWin').value)||5));if(w%2===0)w++;$('filterWin').value=w;let half=(w-1)>>1,type=$('filterType').value,items=[];targetChannels().forEach(c=>{let old=c.values.slice(a,b+1),nv=[],last=NaN,alpha=2/(w+1);for(let k=0;k<old.length;k++){let s=Math.max(0,k-half),e=Math.min(old.length-1,k+half),seg=old.slice(s,e+1),center=k-s;if(type==='median')nv[k]=median(seg);else if(type==='gaussian')nv[k]=gauss(seg);else if(type==='exp'){let v=old[k];nv[k]=!isFinite(v)?NaN:(!isFinite(last)?v:alpha*v+(1-alpha)*last);last=nv[k]}else if(type==='edge')nv[k]=edgeSmooth(seg,center);else nv[k]=avg(seg)}for(let k=0;k<nv.length;k++){if(isFinite(nv[k])&&inSel(c,a+k)&&nv[k]!==c.values[a+k])items.push([c,a+k,c.values[a+k],c.values[a+k]=nv[k]])}});pushChange(items);updateSelectionBounds();updateFullYRange();draw();updateStat();toast(`滤波完成：${items.length} 个数据`) }catch(e){toast(e.message)}}
+function deleteSelected(){try{if(!state.sel)throw Error('请先框选要删除的数据');let groups=[];state.channels.forEach(c=>{let set=state.sel.members&&state.sel.members[c.key];if(!set||!set.size)return;let idx=[...set].filter(i=>isFinite(c.values[i])).sort((a,b)=>b-a);if(!idx.length)return;let vals=idx.map(i=>[i,c.values[i]]);idx.forEach(i=>c.values.splice(i,1));groups.push({c,vals})});let count=groups.reduce((n,g)=>n+g.vals.length,0);if(!count)throw Error('框选区间没有命中数据');state.undo.push({kind:'deletePoints',groups,sel:state.sel,count});state.redo=[];updateHistoryButtons();markDirty();state.sel=null;hideSelPicker();updateFullYRange();buildChannels();draw();updateStat();toast(`已删除 ${count} 个数据点`)}catch(e){toast(e.message)}}
+function undo(){let items=state.undo.pop();if(!items)return;if(items.kind==='timeAdjust'){restoreTimeAdjust(items,false);toast(`已撤销${items.mode==='extend'?'拉长':'缩短'}操作`)}else if(items.kind==='deletePoints'){items.groups.forEach(g=>{g.vals.slice().sort((a,b)=>a[0]-b[0]).forEach(([i,v])=>g.c.values.splice(i,0,v))});state.sel=items.sel;updateSelectionBounds();updateFullYRange();buildChannels();draw();updateStat();toast(`已撤销删除 ${items.count} 个数据点`)}else{items.forEach(([c,i,old])=>c.values[i]=old);updateSelectionBounds();updateFullYRange();draw();updateStat();toast(`已撤销 ${items.length} 个数据`)}state.redo.push(items);updateHistoryButtons();markDirty()}
+function redo(){let items=state.redo.pop();if(!items)return;if(items.kind==='timeAdjust'){restoreTimeAdjust(items,true);toast(`已重做${items.mode==='extend'?'拉长':'缩短'}操作`)}else if(items.kind==='deletePoints'){items.groups.forEach(g=>g.vals.slice().sort((a,b)=>b[0]-a[0]).forEach(([i])=>g.c.values.splice(i,1)));state.sel=null;hideSelPicker();updateFullYRange();buildChannels();draw();updateStat();toast(`已重做删除 ${items.count} 个数据点`)}else{items.forEach(([c,i,old,nv])=>c.values[i]=nv);updateSelectionBounds();updateFullYRange();draw();updateStat();toast(`已重做 ${items.length} 个数据`)}state.undo.push(items);updateHistoryButtons();markDirty()}
+function crcTable(){let t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t}const CT=crcTable();function crc32(u){let c=0xffffffff;for(let b of u)c=CT[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0}
+function u16(a,o,v){a[o]=v&255;a[o+1]=v>>>8&255}function u32(a,o,v){a[o]=v&255;a[o+1]=v>>>8&255;a[o+2]=v>>>16&255;a[o+3]=v>>>24&255}
+async function deflateRaw(data){if(typeof CompressionStream==='undefined')return null;try{let stream=new Blob([data]).stream().pipeThrough(new CompressionStream('deflate-raw'));return new Uint8Array(await new Response(stream).arrayBuffer())}catch(e){return null}}async function zip(entries){let enc=new TextEncoder(),parts=[],central=[],off=0;for(let e of entries){let name=enc.encode(e.name),raw=typeof e.data==='string'?enc.encode(e.data):e.data,compressed=await deflateRaw(raw),useDeflate=!!(compressed&&compressed.length<raw.length),method=useDeflate?8:0,data=useDeflate?compressed:raw,crc=crc32(raw),lh=new Uint8Array(30+name.length);u32(lh,0,0x04034b50);u16(lh,4,20);u16(lh,6,2048);u16(lh,8,method);u32(lh,14,crc);u32(lh,18,data.length);u32(lh,22,raw.length);u16(lh,26,name.length);lh.set(name,30);parts.push(lh,data);let ch=new Uint8Array(46+name.length);u32(ch,0,0x02014b50);u16(ch,4,20);u16(ch,6,20);u16(ch,8,2048);u16(ch,10,method);u32(ch,16,crc);u32(ch,20,data.length);u32(ch,24,raw.length);u16(ch,28,name.length);u32(ch,42,off);ch.set(name,46);central.push(ch);off+=lh.length+data.length}let csize=central.reduce((s,x)=>s+x.length,0),eoc=new Uint8Array(22);u32(eoc,0,0x06054b50);u16(eoc,8,entries.length);u16(eoc,10,entries.length);u32(eoc,12,csize);u32(eoc,16,off);return new Blob([...parts,...central,eoc],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
+function safeSheetName(n){return String(n||'Sheet1').replace(/[\\\\/\\*\\?:\\[\\]]/g,'_').slice(0,31)||'Sheet1'}function uniqueSheetName(base,names){let b=safeSheetName(base),set=new Set(names.map(x=>x.toLowerCase()));if(!set.has(b.toLowerCase()))return b;for(let i=1;i<1000;i++){let suf='_'+i,c=b.slice(0,31-suf.length)+suf;if(!set.has(c.toLowerCase()))return c}return b.slice(0,27)+'_new'}function safeFileName(n){return safeSheetName(n).replace(/[\/:*?"<>|]/g,'_')}function exportHeader(c,mode){return mode==='response'?`${c.name}_响应值`:mode==='percent'?`${c.name}_响应百分比(%)`:c.name}function downloadBlob(blob,name){let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}async function exportNewWorkbook(){let sh=safeSheetName(state.sheet||'ModifiedData'),entries=[{name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},{name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},{name:'xl/workbook.xml',data:`<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${esc(sh)}" sheetId="1" r:id="rId1"/></sheets></workbook>`},{name:'xl/_rels/workbook.xml.rels',data:'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},{name:'xl/worksheets/sheet1.xml',data:sheetXml()}];downloadBlob(await zip(entries),safeFileName(sh)+'.xlsx');toast('已导出新 Excel')}async function exportAppendWorkbook(){if(!wb||!wb.files||!wb.files['xl/workbook.xml'])return await exportNewWorkbook();let enc=new TextEncoder(),dec=new TextDecoder(),files={...wb.files};let names=wb.sheets.map(s=>s.name),newName=uniqueSheetName((state.sheet||'Sheet')+'_修改',names),idx=1;while(files[`xl/worksheets/sheet${idx}.xml`])idx++;let sheetPath=`xl/worksheets/sheet${idx}.xml`,target=`worksheets/sheet${idx}.xml`;files[sheetPath]=enc.encode(sheetXml(undefined,state.hasTime));let wbXml=dec.decode(files['xl/workbook.xml']),relsPath='xl/_rels/workbook.xml.rels',relsXml=files[relsPath]?dec.decode(files[relsPath]):'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>';let ids=[...wbXml.matchAll(/sheetId="(\d+)"/g)].map(m=>+m[1]),sheetId=(ids.length?Math.max(...ids):0)+1,rn=1;while(relsXml.includes(`Id="rId${rn}"`))rn++;let rid=`rId${rn}`;wbXml=wbXml.replace('</sheets>',`<sheet name="${esc(newName)}" sheetId="${sheetId}" r:id="${rid}"/></sheets>`);relsXml=relsXml.replace('</Relationships>',`<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="${target}"/></Relationships>`);files['xl/workbook.xml']=enc.encode(wbXml);files[relsPath]=enc.encode(relsXml);let ct='[Content_Types].xml';if(files[ct]){let c=dec.decode(files[ct]);if(!c.includes(`/xl/worksheets/sheet${idx}.xml`))c=c.replace('</Types>',`<Override PartName="/xl/worksheets/sheet${idx}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`);files[ct]=enc.encode(c)}let entries=Object.keys(files).map(name=>({name,data:files[name]}));let base=(state.name||'workbook.xlsx').replace(/\.[^.]+$/,'').replace(/[\\/:*?"<>|]/g,'_');downloadBlob(await zip(entries),base+'_modified.xlsx');toast(`已导出副本，并添加 ${newName}`)}async function exportXlsx(){try{if(!state.channels.length)return toast('请先加载数据');let dataMode=$('exportDataMode')?.value||'resistance';if(dataMode!=='resistance'){let missing=state.channels.filter(c=>!isFinite(channelBaseline(c)));if(missing.length){let names=missing.slice(0,4).map(channelLabel).join('、'),more=missing.length>4?` 等 ${missing.length} 个通道`:'';return toast(`请先设置基线：${names}${more}`)}}let mode=$('exportMode')?.value||'new';if(mode==='append')await exportAppendWorkbook();else await exportNewWorkbook();clearDirty()}catch(e){console.error(e);toast('导出失败：'+(e.message||e))}}
+async function loadFile(f){if(!f||!confirmDiscard())return;let picked=$('pickedName'),oldPicked=picked?picked.textContent:'',oldLabel=$('fileName').textContent;try{$('fileName').textContent='读取中...';if(!/\.(xlsx|csv|tsv)$/i.test(f.name))throw Error('仅支持 .xlsx / .csv / .tsv 文件');if(f.size>200*1024*1024)throw Error('文件超过 200 MB，请先精简数据或另存为 CSV');if(picked)picked.textContent=f.name;if(/\.csv$|\.tsv$/i.test(f.name)){let sh=f.name.replace(/\.[^.]+$/,'');useRows(parseCSV(await f.text()),f.name,sh,0);wb=null;$('sheet').innerHTML='<option>CSV</option>'}else{let nextWb=await readXlsx(f),rows=sheetRows(nextWb,0);useRows(rows,f.name,nextWb.sheets[0]?.name||'Sheet1',0);wb=nextWb;$('sheet').innerHTML=wb.sheets.map((s,i)=>`<option value="${i}">${esc(s.name)}</option>`).join('')}}catch(err){console.error(err);toast(err.message);if(picked)picked.textContent=oldPicked||'未选择文件';$('fileName').textContent=oldLabel}}
+
+function csvCell(value){let text=value==null?'':String(value);return /[",\r\n]/.test(text)?'"'+text.replace(/"/g,'""')+'"':text}
+function exportCsv(){try{if(!state.channels.length)return toast('请先加载数据');let mode=$('exportDataMode')?.value||'resistance',heads=[state.timeHeader||'Time(s)',...state.channels.map(c=>exportHeader(c,mode))],rows=[heads];for(let i=0;i<state.x.length;i++){let row=[isFinite(state.x[i])?Number(Number(state.x[i]).toPrecision(15)):state.x[i]];state.channels.forEach(c=>{let v=exportValue(c,i,mode);row.push(isFinite(v)?v:'')});rows.push(row)}let csv='\uFEFF'+rows.map(row=>row.map(csvCell).join(',')).join('\r\n')+'\r\n',base=(state.name||'resiscope').replace(/\.[^.]+$/,'');downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),safeFileName(base)+'_modified.csv');toast('已导出 CSV')}catch(e){console.error(e);toast('CSV 导出失败：'+(e.message||e))}}
+
+function sheetXml(mode,includeTime=true){
+  mode=mode||$('exportDataMode')?.value||'resistance';
+  let rows=[],offset=includeTime?1:0,heads=[...(includeTime?[state.timeHeader||'Time(s)']:[]),...state.channels.map(c=>exportHeader(c,mode))];
+  let cols=heads.map((_,i)=>`<col min="${i+1}" max="${i+1}" width="${includeTime&&i===0?14:16}" customWidth="1"/>`).join('');
+  rows.push('<row r="1">'+heads.map((h,i)=>'<c r="'+colName(i)+'1" t="inlineStr"><is><t>'+esc(h)+'</t></is></c>').join('')+'</row>');
+  for(let r=0;r<state.x.length;r++){
+    let time=isFinite(state.x[r])?Number(Number(state.x[r]).toPrecision(15)):state.x[r],cs=includeTime?['<c r="A'+(r+2)+'"><v>'+time+'</v></c>']:[];
+    state.channels.forEach((c,i)=>{let v=exportValue(c,r,mode);if(isFinite(v))cs.push('<c r="'+colName(i+offset)+(r+2)+'"><v>'+v+'</v></c>')});
+    rows.push('<row r="'+(r+2)+'">'+cs.join('')+'</row>')
+  }
+  return '<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>'+cols+'</cols><sheetData>'+rows.join('')+'</sheetData></worksheet>'
+}
+
+function initWorkbenchLayout(){
+  let app=document.querySelector('.app'),side=$('side'),main=document.querySelector('.main'),top=document.querySelector('.top'),stage=document.querySelector('.stage'),plotWrap=document.querySelector('.plotWrap');
+  let groups=[...side.children].filter(el=>el.classList&&el.classList.contains('group'));
+  if(groups.length<7)return;
+  let [fileGroup,sampleGroup,channelGroup,selectionGroup,operationGroup,filterGroup,exportGroup]=groups;
+   let brand=side.querySelector('.brand'),sub=side.querySelector('.sub'),modeTabs=document.querySelector('.modeTabs'),cursor=$('cursorReadout'),fileName=$('fileName'),saveState=$('saveState'),about=$('aboutBtn'),menu=$('menu'),filePick=fileGroup.querySelector('.filePick'),sheet=$('sheet'),fit=$('fit'),zero=$('zeroRefWrap'),undo=$('undo'),redo=$('redo'),exportBtn=$('export'),exportCsvBtn=$('exportCsv')||document.createElement('button');exportCsvBtn.id='exportCsv';exportCsvBtn.className='primary';exportCsvBtn.title='导出当前修改结果为 CSV';exportCsvBtn.textContent='导出 CSV';
+   [brand,sub,modeTabs,cursor,fileName,saveState,about,menu,filePick,sheet,fit,zero,undo,redo,exportBtn,exportCsvBtn].forEach(el=>el&&el.remove());
+  let brandBlock=document.createElement('div');brandBlock.className='brandBlock';let brandMark=document.createElement('span');brandMark.className='brandMark';brandMark.setAttribute('aria-hidden','true');brandMark.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>';brandBlock.append(brandMark,brand,sub);
+  let fileBar=document.createElement('div');fileBar.className='topFileBar';let fileBtn=filePick.querySelector('#fileBtn');fileBtn.textContent='打开文件';fileBtn.title='点击选择文件，也可以将文件直接拖入窗口';fileBar.append(filePick,fileName);let sheetLabel=document.createElement('span');sheetLabel.className='topFieldLabel';sheetLabel.textContent='工作表';sheet.style.marginTop='0';fileBar.append(sheetLabel,sheet,saveState);
+   let topActions=document.createElement('div');topActions.className='topActions';topActions.append(menu,undo,redo,exportBtn,exportCsvBtn,about);
+  top.replaceChildren(brandBlock,fileBar,topActions);app.insertBefore(top,app.firstChild);
+  fileGroup.remove();let oldHistory=exportGroup.querySelector('.grid3');if(oldHistory)oldHistory.remove();
+  let chartToolbar=document.createElement('div');chartToolbar.className='chartToolbar';let chartLeft=document.createElement('div');chartLeft.className='chartToolbarLeft';chartLeft.append(modeTabs,cursor);let chartRight=document.createElement('div');chartRight.className='chartToolbarRight';chartRight.append(fit,zero);chartToolbar.append(chartLeft,chartRight);stage.insertBefore(chartToolbar,plotWrap);
+  let rangeActions=selectionGroup.querySelector('.grid2'),selectAll=$('selectAllData'),del=$('deleteSel');rangeActions.className='selectionSideActions';rangeActions.style.marginTop='';del.title='删除框选区间中的选中数据';let up=document.createElement('button');up.id='moveSelUp';up.className='moveButton';up.title='向上移动选中数据（Shift + ↑ 可增大步长）';up.textContent='↑';let down=document.createElement('button');down.id='moveSelDown';down.className='moveButton';down.title='向下移动选中数据（Shift + ↓ 可增大步长）';down.textContent='↓';rangeActions.replaceChildren(selectAll,up,down,del);
+  let formulaLibrary=document.createElement('div');formulaLibrary.id='formulaLibrary';formulaLibrary.className='formulaLibrary';formulaLibrary.hidden=true;formulaLibrary.innerHTML='<div class="formulaLibraryRow"><select id="savedFormula" aria-label="选择已保存公式" title="选择后会将公式填回上方输入框"><option value="">选择已保存公式</option></select><button id="formulaSaveNew" class="formulaIconButton" type="button" title="将当前公式另存为新公式" aria-label="另存为新公式">'+uiIcon('<path d="M19 21 12 16l-7 5V5a2 2 0 0 1 2-2h7"></path><path d="M19 4v6M22 7h-6"></path>')+'</button><button id="formulaUpdate" class="formulaIconButton" type="button" title="用当前输入内容更新选中的公式" aria-label="更新选中的公式">'+uiIcon('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"></path><path d="M17 21v-8H7v8M7 3v5h8"></path>')+'</button><button id="formulaMore" class="formulaIconButton" type="button" title="管理、导入或导出公式" aria-label="更多公式操作" aria-expanded="false">'+uiIcon('<circle cx="5" cy="12" r="1"></circle><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle>')+'</button></div><div id="formulaManageMenu" class="formulaManageMenu" hidden><button id="formulaRename" type="button">重命名</button><button id="formulaDelete" type="button">删除</button><button id="formulaExport" type="button">导出公式库</button><button id="formulaImport" type="button">导入公式库</button></div><input id="formulaImportFile" type="file" accept=".json,application/json" hidden>';
+  operationGroup.querySelector('.grid2').after(formulaLibrary);
+  let opSelect=$('op'),opGrid=opSelect.parentElement;opSelect.remove();opGrid.style.gridTemplateColumns='minmax(0, 1fr)';operationGroup.querySelector('.label').textContent='公式处理';prepareFormulaInput(true);
+  let formulaHeading=operationGroup.querySelector('.label');formulaHeading.classList.add('formulaHeading');formulaHeading.insertAdjacentHTML('beforeend','<span class="formulaMark" aria-hidden="true">f(x)</span>');
+  let formulaAction=document.createElement('div');formulaAction.className='formulaActionRow';formulaAction.innerHTML='<p class="hint" id="formulaInputHint">x 为原始电阻值</p>';let applyFormulaButton=$('applyOp');applyFormulaButton.removeAttribute('style');applyFormulaButton.title='应用公式到框选区间';formulaAction.append(applyFormulaButton);operationGroup.append(formulaAction);$('operand').setAttribute('aria-label','处理公式');$('operand').setAttribute('aria-describedby','formulaInputHint');
+  let aboutHeads=[...$('aboutModal').querySelectorAll('h3')],curveList=aboutHeads.find(h=>h.textContent.trim()==='曲线编辑')?.nextElementSibling,limitList=aboutHeads.find(h=>h.textContent.trim()==='适配性与限制')?.nextElementSibling,toolItem=curveList&&[...curveList.children].find(li=>li.textContent.includes('支持加、减、乘、除'));if(toolItem)toolItem.textContent='支持自定义公式 f(x)、常用滤波、删除、时间伸缩、撤销和重做。';if(curveList)curveList.insertAdjacentHTML('beforeend','<li>自定义公式可保存为当前浏览器中的常用公式；选择后会填回输入框，可继续编辑并更新，也可重命名、删除或通过 JSON 文件导入导出。</li><li>没有时间列时，可在通道显示栏直接修改采样间隔；输入完成后点击其他位置即应用。存在原始时间列时不会覆盖原时间。</li>');if(limitList)limitList.insertAdjacentHTML('beforeend','<li>常用公式库保存在当前浏览器和当前网页地址下，不会写入 Excel，也不会自动跨浏览器或跨设备同步；清除浏览器站点数据、移动本地 HTML 路径前，建议先导出公式库备份。</li>');
+  let timeGroup=document.createElement('div');timeGroup.className='group timeAdjustGroup';timeGroup.innerHTML='<p class="label">时间伸缩</p><div class="toolControlRow"><label class="toolField"><span class="toolFieldLabel">调整方式</span><select id="timeAdjustMode" title="拉长使用线性插值；缩短使用保峰重采样"><option value="extend">拉长（增加）</option><option value="compress">缩短（保峰）</option></select></label><label class="toolField"><span class="toolFieldLabel">调整点数</span><span class="toolNumberField"><input id="timeAdjustPoints" type="number" value="10" min="1" max="1000000" step="1" aria-label="增减点数" aria-describedby="timeAdjustHint"><span class="toolUnit" aria-hidden="true">点</span></span></label><button id="applyTimeAdjust" class="primary" type="button" title="应用时间伸缩到框选区间">应用</button></div><p class="hint" id="timeAdjustHint">按框选横向范围处理所选通道的连续曲线段。</p>';
+  function fieldWrap(control,label,unit){let field=document.createElement('label');field.className='toolField';let caption=document.createElement('span');caption.className='toolFieldLabel';caption.textContent=label;field.append(caption);if(unit){let number=document.createElement('span');number.className='toolNumberField';let suffix=document.createElement('span');suffix.className='toolUnit';suffix.textContent=unit;suffix.setAttribute('aria-hidden','true');number.append(control,suffix);field.append(number)}else field.append(control);return field}
+  let filterRow=filterGroup.querySelector('.grid2'),filterButton=$('applyFilter');filterRow.className='toolControlRow';filterButton.removeAttribute('style');filterButton.title='应用滤波到框选区间';filterRow.replaceChildren(fieldWrap($('filterType'),'滤波方法'),fieldWrap($('filterWin'),'窗口大小','点'),filterButton);filterGroup.insertAdjacentHTML('beforeend','<p class="hint" id="filterHint">仅应用于框选区间</p>');$('filterWin').setAttribute('aria-describedby','filterHint');
+  let exportGrid=exportGroup.querySelector('.exportGrid');exportGrid.replaceChildren(fieldWrap($('exportDataMode'),'数据类型'),fieldWrap($('exportMode'),'文件方式'));let exportMode=$('exportMode');exportMode.options[0].textContent='新 Excel：保留原名';exportMode.options[1].textContent='原文件副本：添加 sheet';exportMode.title='新 Excel 保留工作表原名；原文件副本添加修改后的工作表';let exportHint=exportGroup.querySelector('.hint');exportHint.classList.add('exportHint');exportHint.innerHTML=uiIcon('<circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path>')+'<span>不会覆盖原文件；添加 sheet 会导出副本。</span>';
+
+  let channelQuickRow=channelGroup.querySelector('.row'),dtInput=$('dt'),applyDt=$('applyDt'),dtHint=$('dtHint');channelQuickRow.classList.add('channelQuickRow');dtInput.setAttribute('aria-label','采样间隔（秒/点）');let sampleInline=document.createElement('label');sampleInline.className='sampleInline';sampleInline.title='无时间列时，修改后点击其他位置即可应用';sampleInline.innerHTML='<span>采样间隔：</span>';sampleInline.append(dtInput);sampleInline.insertAdjacentHTML('beforeend','<span>秒/点</span>');channelQuickRow.append(sampleInline);let sampleSupport=document.createElement('div');sampleSupport.hidden=true;sampleSupport.append(applyDt,dtHint);channelGroup.append(sampleSupport);sampleGroup.remove();
+   channelGroup.classList.add('channelGroup');selectionGroup.classList.add('selectionGroup');operationGroup.classList.add('operationGroup');filterGroup.classList.add('filterGroup');exportGroup.classList.add('exportGroup');
+   let sideIntro=document.createElement('div');sideIntro.className='sideIntro';sideIntro.innerHTML='<strong>数据工具</strong><span>通道与文件</span>';side.prepend(sideIntro);side.append(channelGroup);
+   selectionGroup.id='selectionGroup';operationGroup.id='operationGroup';timeGroup.id='timeAdjustGroup';filterGroup.id='filterGroup';let toolDrawer=document.createElement('aside');toolDrawer.id='toolDrawer';toolDrawer.className='toolDrawer';let toolDrawerHead=document.createElement('div');toolDrawerHead.className='toolDrawerHead';let toolDrawerTitle=document.createElement('strong');toolDrawerTitle.textContent='工具';let toolDrawerClose=document.createElement('button');toolDrawerClose.type='button';toolDrawerClose.className='toolDrawerClose';toolDrawerClose.textContent='×';toolDrawerClose.title='关闭工具面板';toolDrawerHead.append(toolDrawerTitle,toolDrawerClose);let toolDrawerBody=document.createElement('div');toolDrawerBody.className='toolDrawerBody';toolDrawerBody.append(selectionGroup,operationGroup,timeGroup,filterGroup);toolDrawer.append(toolDrawerHead,toolDrawerBody);document.body.append(toolDrawer);
+   let panelDefs=[['selectionGroup','框选区间','<path d="M4 4h5M4 4v5M20 20h-5M20 20v-5"></path><path d="M9 4h6M4 9v6M20 9v6M9 20h6"></path>'],['operationGroup','公式处理','<path d="M6 5h12M6 19h12M8 5l8 14M16 5 8 19"></path>'],['timeAdjustGroup','时间伸缩','<path d="M4 7h16M4 17h16M8 4l-4 3 4 3M16 14l4 3-4 3"></path>'],['filterGroup','滤波','<path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z"></path>']];let panelMap={},activePanelId='';function openToolPanel(id,label,button){let isOpen=toolDrawer.classList.contains('open')&&activePanelId===id;if(isOpen){toolDrawer.classList.remove('open');button.classList.remove('active');activePanelId='';return}Object.entries(panelMap).forEach(([key,group])=>{group.hidden=key!==id});document.querySelectorAll('.toolIconButton').forEach(b=>b.classList.remove('active'));button.classList.add('active');activePanelId=id;toolDrawerTitle.textContent=label;toolDrawer.classList.add('open')}panelDefs.forEach(([id,label,paths])=>{let group=document.getElementById(id),button=document.createElement('button');if(!group)return;panelMap[id]=group;group.hidden=true;button.type='button';button.className='toolIconButton';button.title=label;button.setAttribute('aria-label',label);button.innerHTML=uiIcon(paths);button.onclick=()=>openToolPanel(id,label,button);topActions.insertBefore(button,exportBtn)});toolDrawerClose.onclick=()=>{toolDrawer.classList.remove('open');activePanelId='';document.querySelectorAll('.toolIconButton').forEach(b=>b.classList.remove('active'))};
+   let exportPopover=document.createElement('div');exportPopover.id='exportPopover';exportPopover.className='exportPopover';exportPopover.hidden=true;let exportPopoverTitle=document.createElement('p');exportPopoverTitle.className='exportPopoverTitle';let dataLabel=document.createElement('label');dataLabel.textContent='数据类型';dataLabel.append($('exportDataMode'));let fileLabel=document.createElement('label');fileLabel.textContent='Excel 文件方式';fileLabel.append($('exportMode'));let exportStart=document.createElement('button');exportStart.type='button';exportStart.className='primary';exportPopover.append(exportPopoverTitle,dataLabel,fileLabel,exportStart);document.body.append(exportPopover);let exportTarget='xlsx';function openExportPopover(target){exportTarget=target;exportPopoverTitle.textContent=target==='csv'?'导出 CSV 设置':'导出 Excel 设置';fileLabel.hidden=target==='csv';exportStart.textContent=target==='csv'?'导出 CSV':'导出 Excel';exportPopover.hidden=false}function closeExportPopover(){exportPopover.hidden=true}exportStart.onclick=async()=>{closeExportPopover();if(exportTarget==='csv')await exportCsv();else await exportXlsx()};exportBtn.onclick=()=>openExportPopover('xlsx');exportCsvBtn.onclick=()=>openExportPopover('csv');window.resiOpenExportPopover=openExportPopover;document.addEventListener('mousedown',event=>{if(!exportPopover.hidden&&!exportPopover.contains(event.target)&&event.target!==exportBtn&&event.target!==exportCsvBtn)closeExportPopover()});
+   exportGroup.remove();
+  up.onclick=()=>{if(state.sel)nudgeSelection(1,false)};down.onclick=()=>{if(state.sel)nudgeSelection(-1,false)};
+}
+// Theme preferences stay separate from experiment data and formula storage.
+function initThemePicker(host) {
+  const root = document.documentElement;
+  const names = {pink:'蓝粉渐变', blue:'清爽蓝白', sage:'暖白青绿', sand:'米白暖砂', slate:'雾灰蓝', lavender:'柔雾紫'};
+  const themeButton = document.createElement('button');
+  themeButton.id = 'themeButton';
+  themeButton.type = 'button';
+  themeButton.className = 'withIcon';
+  themeButton.setAttribute('aria-expanded','false');
+  themeButton.setAttribute('aria-controls','themePopover');
+  themeButton.innerHTML = uiIcon('<path d="M12 3a9 9 0 1 0 0 18h1a2 2 0 0 0 1.5-3.3 1.4 1.4 0 0 1 1-2.4H17a4 4 0 0 0 4-4A8 8 0 0 0 12 3Z"></path><path d="M7.5 10h.01M10 6.5h.01M14.5 6.5h.01M17.5 10h.01"></path>')+'<span>主题</span>';
+  const panel = document.createElement('div');
+  panel.id = 'themePopover'; panel.className = 'themePopover'; panel.hidden = true;
+  const swatches = {pink:['#c9efff','#ece8ff','#ffdde8'],blue:['#f2f5fa','#ffffff','#356ad8'],sage:['#f4f4ee','#eaf0e7','#367b65'],sand:['#fcf9f1','#eee7d9','#926832'],slate:['#f3f6f7','#e2e9ed','#4a7188'],lavender:['#faf6fc','#e9e1ef','#7d6398']};
+  panel.innerHTML = '<fieldset><legend>界面主题</legend>'+Object.entries(names).map(([value,name])=>'<label class="themeChoice"><input type="radio" name="interfaceTheme" value="'+value+'"><span>'+name+'</span><span class="themeSwatch" aria-hidden="true">'+swatches[value].map(color=>'<i style="background:'+color+'"></i>').join('')+'</span></label>').join('')+'</fieldset><p id="themePreferenceStatus" role="status">自动记住本浏览器中的选择</p>';
+  function sync() {
+    const current = Object.hasOwn(names,root.dataset.theme) ? root.dataset.theme : 'pink';
+    panel.querySelectorAll('input').forEach(input=>input.checked=input.value===current);
+    themeButton.title='切换主题：'+names[current];
+    themeButton.setAttribute('aria-label','切换主题，当前为'+names[current]);
+  }
+  function close(restoreFocus=false) { panel.hidden=true; themeButton.setAttribute('aria-expanded','false'); if(restoreFocus)themeButton.focus(); }
+  themeButton.onclick=()=>{const open=panel.hidden;panel.hidden=!open;themeButton.setAttribute('aria-expanded',String(open));if(open)panel.querySelector('input:checked').focus();};
+  panel.addEventListener('change',event=>{
+    const value=event.target.value;if(!Object.hasOwn(names,value))return;
+    root.dataset.theme=value;
+    try {localStorage.setItem('resiscope.theme.v1',value);panel.querySelector('p').textContent='自动记住本浏览器中的选择';}
+    catch {panel.querySelector('p').textContent='当前浏览器无法保存，主题本次有效';}
+    sync();draw();
+  });
+  document.addEventListener('pointerdown',event=>{if(!panel.hidden&&!panel.contains(event.target)&&!themeButton.contains(event.target))close();});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){event.preventDefault();event.stopImmediatePropagation();close(true);}},true);
+  document.addEventListener('focusin',event=>{if(!panel.hidden&&!panel.contains(event.target)&&event.target!==themeButton)close();});
+  window.addEventListener('storage',event=>{if(event.key==='resiscope.theme.v1'||event.key===null){root.dataset.theme=Object.hasOwn(names,event.newValue)?event.newValue:'pink';sync();draw();}});
+  host.prepend(themeButton);document.body.append(panel);sync();
+}
+
+function uiIcon(paths){return '<svg class="uiIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+paths+'</svg>'}
+function setButtonIcon(id,paths,label){let button=$(id);if(!button)return;button.classList.add('withIcon');button.innerHTML=uiIcon(paths)+'<span>'+label+'</span>'}
+function decorateUiIcons(){
+  setButtonIcon('fileBtn','<path d="M3 7V5a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v2"></path><path d="M3 18l2-6h16l-2 7a2 2 0 0 1-2 1H5a2 2 0 0 1-2-2Z"></path>','打开文件');
+  setButtonIcon('undo','<path d="M9 14 4 9l5-5"></path><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"></path>','撤销');
+  setButtonIcon('redo','<path d="m15 14 5-5-5-5"></path><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"></path>','重做');
+  setButtonIcon('export','<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h2M8 17h2M14 13h2M14 17h2"></path>','导出 Excel');
+  setButtonIcon('exportCsv','<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8M8 17h8"></path>','导出 CSV');
+  setButtonIcon('aboutBtn','<circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path>','关于');
+  setButtonIcon('fit','<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"></path>','全图');
+  setButtonIcon('applyOp','<path d="m5 12 4 4L19 6"></path>','应用公式');
+  setButtonIcon('applyTimeAdjust','<path d="m8 7-5 5 5 5"></path><path d="m16 7 5 5-5 5"></path><path d="M3 12h18"></path>','应用');
+  setButtonIcon('applyFilter','<path d="M22 3H2l8 9.5V19l4 2v-8.5Z"></path>','应用');
+  setButtonIcon('deleteSel','<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5"></path>','删除');
+}
+initWorkbenchLayout();decorateUiIcons();$('exportCsv').onclick=exportCsv;let toolIconRail=document.createElement('div');toolIconRail.className='toolIconRail';toolIconRail.setAttribute('aria-label','数据处理工具');document.body.append(toolIconRail);document.querySelectorAll('.toolIconButton').forEach(button=>toolIconRail.append(button));
+['undo','redo'].forEach(id=>$(id).setAttribute('aria-label',$(id).title));
+$('fileBtn').onclick=()=>$('file').click();$('file').onchange=e=>{loadFile(e.target.files[0]);e.target.value=''};
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();document.body.classList.add('dragging')}));['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();if(ev==='drop'){let f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];loadFile(f)}document.body.classList.remove('dragging')}));
+
+$('sheet').onchange=e=>{if(!wb)return;if(!confirmDiscard()){e.target.value=String(state.sheetIndex);return}try{let i=Number(e.target.value);useRows(sheetRows(wb,i),state.name,wb.sheets[i]?.name||('Sheet'+(i+1)),i)}catch(err){e.target.value=String(state.sheetIndex);toast(err.message)}};$('applyDt').onclick=()=>{let dt=Number($('dt').value);if(!isFinite(dt)||dt<=0)return toast('采样间隔必须大于 0');state.dt=dt;if(!state.channels.length)return toast('采样间隔已设置');if(state.hasTime)return toast('当前 sheet 已有时间列，不会覆盖原时间');state.x=state.x.map((_,i)=>i*state.dt);fitAll();markDirty();toast('采样间隔已应用')};$('dt').onchange=()=>{let input=$('dt'),dt=Number(input.value);if(!isFinite(dt)||dt<=0){input.value=state.dt>0?state.dt:.2;return toast('采样间隔必须大于 0')}$('applyDt').click()};
+$('allOn').onclick=()=>{state.channels.forEach(c=>state.visible[c.key]=true);refreshYRangeKeepingView();buildChannels();draw()};
+$('allOff').onclick=()=>{state.channels.forEach(c=>state.visible[c.key]=false);refreshYRangeKeepingView();buildChannels();draw()};
+$('fit').onclick=fitAll;$('modeResistance').onclick=()=>setView('resistance');$('modeResponse').onclick=()=>setView('response');$('modePercent').onclick=()=>setView('percent');$('zeroRef').onchange=e=>{state.includeZero=e.target.checked;refreshYRange();draw();updateStat()};$('applyOp').onclick=applyFormula;$('applyFilter').onclick=applyFilter;$('selectAllData').onclick=selectAllVisibleData;$('deleteSel').onclick=deleteSelected;$('undo').onclick=undo;$('redo').onclick=redo;$('export').onclick=exportXlsx;updateHistoryButtons();$('menu').onclick=()=>$('side').classList.toggle('open');$('aboutBtn').onclick=()=>$('aboutModal').classList.add('show');$('aboutClose').onclick=()=>$('aboutModal').classList.remove('show');$('aboutModal').onclick=e=>{if(e.target===$('aboutModal'))$('aboutModal').classList.remove('show')};
+$('timeAdjustMode').onchange=updateTimeAdjustHint;$('timeAdjustPoints').oninput=updateTimeAdjustHint;$('applyTimeAdjust').onclick=applyTimeAdjust;
+let savedFormulaSelect=$('savedFormula');savedFormulaSelect.onmousedown=()=>refreshFormulaLibrary(activeFormulaId,true);savedFormulaSelect.onkeydown=e=>{if(e.key===' '||e.key==='Enter'||(e.altKey&&e.key==='ArrowDown'))refreshFormulaLibrary(activeFormulaId,true)};savedFormulaSelect.onblur=()=>refreshFormulaLibrary(activeFormulaId,false);savedFormulaSelect.onchange=e=>{activeFormulaId=e.target.value;let item=savedFormulas.find(f=>f.id===activeFormulaId);if(item){formulaDraft=item.expression;$('operand').value=item.expression}$('formulaManageMenu').hidden=true;$('formulaMore').classList.remove('isActive');$('formulaMore').setAttribute('aria-expanded','false');refreshFormulaLibrary()};
+$('formulaSaveNew').onclick=saveNewFormula;$('formulaUpdate').onclick=updateSavedFormula;$('formulaMore').onclick=()=>toggleFormulaMenu();$('formulaRename').onclick=renameSavedFormula;$('formulaDelete').onclick=deleteSavedFormula;$('formulaExport').onclick=exportFormulaLibrary;$('formulaImport').onclick=()=>$('formulaImportFile').click();$('formulaImportFile').onchange=async e=>{await importFormulaLibraryFile(e.target.files[0]);e.target.value=''};
+document.addEventListener('mousedown',e=>{let box=$('formulaLibrary');if(box&&!box.hidden&&!box.contains(e.target))toggleFormulaMenu(false)});
+loadFormulaLibrary();$('export').onclick=()=>window.resiOpenExportPopover?.('xlsx');$('exportCsv').onclick=()=>window.resiOpenExportPopover?.('csv');
+addEventListener('beforeunload',e=>{if(!state.dirty)return;e.preventDefault();e.returnValue=''});updateModeButtons();updateBaselineUI();hideCursor();updateStat();
+</script>
+
+
+<section class="converterApp" id="converterApp" aria-label="ResiScope 数据转换">
+  <div class="converterSource" hidden><div class="directionSwitch" role="group" aria-label="转换方向"><button type="button" class="active" data-direction="txt-xlsx" aria-pressed="true">TXT → Excel</button><button type="button" data-direction="xlsx-txt" aria-pressed="false">Excel → TXT</button></div></div>
+  <main class="converterMain">
+    <section class="converterWorkspace">
+      <div class="cvDrop" id="cvDrop" tabindex="0"><input id="cvFileInput" type="file" accept=".txt" multiple><div><svg class="cvDropIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"></path><path d="M20 15v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4"></path></svg><strong id="cvDropTitle">拖入 TXT 文件</strong><p id="cvDropHint">支持一次添加多个文件，也可以点击选择</p><button id="cvChoose" type="button">选择文件</button></div></div>
+      <section class="cvPanel"><div class="cvPanelHead"><div><strong id="cvListTitle">文件列表</strong> <span id="cvListMeta">尚未添加文件</span></div><div class="cvHeadActions"><button id="cvSelectAll" type="button">全选</button><button id="cvRemove" type="button">移除选中</button><button id="cvClear" type="button">清空</button></div></div><div class="cvTableWrap" id="cvListWrap"><div class="cvPreviewEmpty">拖入文件后将在这里显示解析结果</div></div></section>
+      <section class="cvPanel"><div class="cvPanelHead"><div><strong>数据预览</strong> <span id="cvPreviewName">选择列表中的文件或工作表</span></div><div class="cvPreviewInfo" id="cvPreviewInfo"></div></div><div class="cvTableWrap" id="cvPreview"><div class="cvPreviewEmpty">解析后的数据可在这里滚动和翻页查看</div></div><div class="cvIssues" id="cvIssues" hidden></div></section>
+    </section>
+    <aside class="converterSettings"><h2>转换设置</h2><p class="cvLead">检查数据后即可生成目标文件</p><div class="cvSettingGroup" id="cvOutputGroup"><span class="cvSettingTitle">输出方式</span><div class="cvOutputChoice"><button id="cvMerge" class="active" type="button" data-output="merged" aria-pressed="true">合并为一个 Excel</button><button id="cvIndividual" type="button" data-output="individual" aria-pressed="false">分别导出</button></div><p class="cvOutputInfo" id="cvOutputHint">每个 TXT 对应一个工作表；文件名自动作为 Sheet 名称。</p></div><div class="cvSettingGroup" id="cvReverseGroup" hidden><span class="cvSettingTitle">输出规则</span><div class="cvReverseRule">一个 Sheet 对应一个 TXT；多个结果自动打包为 ZIP。时间列和其他非 CH 通道列会被忽略，所有数值按整数输出。</div></div><div class="cvSettingGroup"><span class="cvSettingTitle">转换摘要</span><div class="cvSummary"><div class="cvMetric"><b id="cvMetricFiles">0</b><span id="cvMetricFilesLabel">文件</span></div><div class="cvMetric"><b id="cvMetricRows">0</b><span>数据行</span></div><div class="cvMetric" title="无法完整解析、通道重复或缺少通道值的数据行"><b id="cvMetricIssues">0</b><span>需检查行</span></div></div><p class="cvMetricHint">需检查行指无法完整解析、通道重复或缺少通道值的原始行，具体原因显示在数据预览下方。</p></div><div class="cvSettingGroup"><button class="cvPrimary" id="cvConvert" type="button" disabled>转换并下载</button><button class="cvSecondary" id="cvLoadEditor" type="button" disabled>载入曲线编辑器</button><div class="cvPrivacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path><path d="m9 12 2 2 4-4"></path></svg><span>文件只在当前浏览器中本地处理，不会上传，也不会覆盖原文件。</span></div></div></aside>
+  </main>
+  <footer class="converterStatus"><span id="cvStatus">支持 CHx = 数值 格式 · 自动识别通道 · 需检查行会说明具体原因</span><span>所有原始电阻按整数保存</span></footer>
+</section>
+<div class="cvToast" id="cvToast"></div>
+<script>
+(()=>{
+  const cv=id=>document.getElementById(id);
+  const cvState={direction:'txt-xlsx',output:'merged',txtItems:[],excelItems:[],currentId:null,busy:false,previewPage:0,previewSize:100};
+  const integerize=()=>{if(typeof state==='undefined'||!state.channels)return;state.channels.forEach(c=>c.values=c.values.map(v=>isFinite(v)?Math.round(v):v))};
+  const originalUseRows=useRows;
+  window.useRows=function(...args){let out=originalUseRows(...args);integerize();refreshYRange();draw();updateStat();return out};
+  const originalPushChange=pushChange;
+  window.pushChange=function(items){if(Array.isArray(items))items.forEach(item=>{if(Array.isArray(item)&&item.length>=4&&isFinite(item[3])){item[3]=Math.round(item[3]);item[0].values[item[1]]=item[3]}});return originalPushChange(items)};
+  function cvToast(message){let el=cv('cvToast');el.textContent=message;el.classList.add('show');clearTimeout(cvToast.timer);cvToast.timer=setTimeout(()=>el.classList.remove('show'),2200)}
+  function baseName(name){return String(name||'data').replace(/\.[^.]+$/,'')||'data'}
+  function formatNumber(n){return new Intl.NumberFormat('en-US').format(Number(n)||0)}
+  function formatBytes(n){if(n<1024)return n+' B';if(n<1024*1024)return (n/1024).toFixed(1)+' KB';return (n/1024/1024).toFixed(1)+' MB'}
+  function makeId(file,suffix=''){return [file.name,file.size,file.lastModified,suffix].join('|')}
+  function correctedChannelNumber(raw){return raw.length===2&&raw[0]===raw[1]?raw[0]:raw}
+  function parseTxt(file,text){
+    text=String(text||'').replace(/^\uFEFF/,'');let rawLines=text?text.split(/\r\n|\n|\r/):[];if(rawLines.length&&rawLines.at(-1)==='')rawLines.pop();
+    let channelSet=new Set(),rowMaps=[],issues=[],corrections=0,correctionDetails=[],issueRows=new Set();
+    rawLines.forEach((raw,index)=>{let lineNo=index+1,clean=raw.replace(/\0/g,' ').trim();if(!clean)return;clean=clean.replace(/^\d+\t/,'');let pairs=[...clean.matchAll(/CH(\d+)\s*=\s*(-?\d+(?:\.\d+)?)/gi)];if(!pairs.length){issues.push(`第 ${lineNo} 行：未找到有效的通道-值对`);issueRows.add(lineNo);return}let row={};pairs.forEach(m=>{let rawNo=m[1],no=correctedChannelNumber(rawNo),ch='CH'+Number(no),value=Math.round(Number(m[2]));if(no!==rawNo){corrections++;if(correctionDetails.length<200)correctionDetails.push(`第 ${lineNo} 行：通道名 CH${rawNo} 已自动纠正为 ${ch}`)}if(Object.prototype.hasOwnProperty.call(row,ch)){issues.push(`第 ${lineNo} 行：${ch} 重复，采用最后一个值`);issueRows.add(lineNo)}row[ch]=value;channelSet.add(ch)});rowMaps.push({lineNo,values:row})});
+    let channels=[...channelSet].sort((a,b)=>Number(a.slice(2))-Number(b.slice(2)));rowMaps.forEach(r=>{let missing=channels.filter(ch=>!Object.prototype.hasOwnProperty.call(r.values,ch));if(missing.length){issueRows.add(r.lineNo);if(issues.length<200)issues.push(`第 ${r.lineNo} 行：缺少 ${missing.join('、')}`)}});
+    return {id:makeId(file),kind:'txt',file,name:file.name,size:file.size,lineCount:rawLines.length,channels,rowMaps,rows:rowMaps.map(r=>channels.map(ch=>r.values[ch])),dataCount:rowMaps.length,issues,issueCount:issueRows.size,corrections,correctionDetails,selected:channels.length>0&&rowMaps.length>0,valid:channels.length>0&&rowMaps.length>0};
+  }
+  function channelHeader(value){let m=String(value??'').trim().match(/^CH(\d+)$/i);return m?{name:'CH'+Number(m[1]),number:Number(m[1])}:null}
+  function parseExcelSheet(book,file,sheetIndex){
+    let sheet=book.sheets[sheetIndex],source=sheetRows(book,sheetIndex),headerIndex=-1,defs=[];
+    for(let i=0;i<Math.min(30,source.length);i++){let found=[];source[i].forEach((v,col)=>{let ch=channelHeader(v);if(ch)found.push({...ch,col})});if(found.length){headerIndex=i;defs=found;break}}
+    let issues=[],issueRows=new Set(),ignored=[];
+    if(headerIndex<0)return {id:makeId(file,String(sheetIndex)),kind:'sheet',file,book,sheetIndex,name:sheet?.name||('Sheet'+(sheetIndex+1)),channels:[],rows:[],dataCount:0,issues:['没有找到 CH0、CH1 等格式的通道表头'],issueCount:1,selected:false,valid:false,ignored:[]};
+    let seen=new Set();defs=defs.sort((a,b)=>a.number-b.number).filter(d=>{if(seen.has(d.name)){issues.push(`表头重复：${d.name}，仅采用第一列`);return false}seen.add(d.name);return true});
+    source[headerIndex].forEach((v,col)=>{let text=String(v??'').trim();if(text&&!channelHeader(text)&&!isTimeHeader(text))ignored.push(text||colName(col))});
+    let rows=[];for(let r=headerIndex+1;r<source.length;r++){let sourceRow=source[r]||[];if(!sourceRow.some(v=>v!==undefined&&v!==''))continue;let out=[],hasValue=false,bad=[];defs.forEach(d=>{let value=sourceRow[d.col];if(isNum(value)){out.push(Math.round(Number(value)));hasValue=true}else{out.push(undefined);bad.push(d.name)}});if(bad.length){issueRows.add(r+1);if(issues.length<200)issues.push(`第 ${r+1} 行：${bad.join('、')} 为空或不是数字`)}if(hasValue)rows.push(out)}
+    return {id:makeId(file,String(sheetIndex)),kind:'sheet',file,book,sheetIndex,name:sheet?.name||('Sheet'+(sheetIndex+1)),channels:defs.map(d=>d.name),rows,dataCount:rows.length,issues,issueCount:issueRows.size+(issues.some(x=>x.startsWith('表头重复'))?1:0),selected:defs.length>0&&rows.length>0,valid:defs.length>0&&rows.length>0,ignored,headerIndex};
+  }
+  function currentItems(){return cvState.direction==='txt-xlsx'?cvState.txtItems:cvState.excelItems}
+  function selectedItems(){return currentItems().filter(item=>item.selected&&item.valid)}
+  async function addFiles(files){
+    if(cvState.busy)return;let list=[...files],wantTxt=cvState.direction==='txt-xlsx',validFiles=list.filter(f=>wantTxt?/\.txt$/i.test(f.name):/\.xlsx$/i.test(f.name));if(!validFiles.length)return cvToast(wantTxt?'请选择 TXT 文件':'请选择 .xlsx 文件');cvState.previewPage=0;cvState.busy=true;cv('cvStatus').textContent='正在读取并检查文件...';
+    try{if(wantTxt){for(let file of validFiles){let id=makeId(file);if(cvState.txtItems.some(x=>x.id===id))continue;let item=parseTxt(file,await file.text());cvState.txtItems.push(item);cvState.currentId=item.id}}else{for(let file of validFiles){if(file.size>200*1024*1024){cvToast(`${file.name} 超过 200 MB，已跳过`);continue}let book=await readXlsx(file);book.sheets.forEach((_,i)=>{let item=parseExcelSheet(book,file,i);if(!cvState.excelItems.some(x=>x.id===item.id))cvState.excelItems.push(item);cvState.currentId=item.id})}}}catch(error){console.error(error);cvToast('读取失败：'+(error.message||error))}finally{cvState.busy=false;renderConverter();cv('cvStatus').textContent='文件检查完成；请确认自动纠正和需检查行的说明后开始转换。'}}
+  function statusFor(item){if(!item.valid)return '<span class="cvBad">不可转换</span>';if(item.issueCount)return `<span class="cvWarn">${item.issueCount} 行需检查</span>`;return '<span class="cvGood">可转换</span>'}
+  function renderList(){let items=currentItems(),wrap=cv('cvListWrap');cv('cvListMeta').textContent=items.length?`共 ${items.length} ${cvState.direction==='txt-xlsx'?'个文件':'个工作表'}`:'尚未添加文件';if(!items.length){wrap.innerHTML='<div class="cvPreviewEmpty">拖入文件后将在这里显示解析结果</div>';return}let isTxt=cvState.direction==='txt-xlsx';wrap.innerHTML=`<table class="cvTable cvFileTable"><thead><tr><th></th><th>${isTxt?'文件名':'文件 / 工作表'}</th><th>大小</th><th>数据行</th><th>通道</th><th>状态</th></tr></thead><tbody>${items.map(item=>`<tr data-id="${esc(item.id)}" class="${item.id===cvState.currentId?'current':''}"><td><input type="checkbox" data-check="${esc(item.id)}" ${item.selected?'checked':''} ${item.valid?'':'disabled'}></td><td><span class="cvFileName">${esc(item.name)}</span>${isTxt?'':`<br><span class="cvSubName">${esc(item.file.name)}</span>`}</td><td>${formatBytes(item.size||item.file.size)}</td><td>${formatNumber(item.dataCount)}</td><td>${item.channels.length}</td><td>${statusFor(item)}</td></tr>`).join('')}</tbody></table>`;wrap.querySelectorAll('tr[data-id]').forEach(row=>row.onclick=e=>{let id=row.dataset.id;if(e.target.matches('input')){let item=items.find(x=>x.id===id);item.selected=e.target.checked}else if(cvState.currentId!==id){cvState.currentId=id;cvState.previewPage=0}renderConverter()})}
+  function renderPreview(){
+    let item=currentItems().find(x=>x.id===cvState.currentId),box=cv('cvPreview'),info=cv('cvPreviewInfo'),issues=cv('cvIssues');
+    if(!item){cv('cvPreviewName').textContent='选择列表中的文件或工作表';info.innerHTML='';box.innerHTML='<div class="cvPreviewEmpty">解析后的数据可在这里滚动和翻页查看</div>';issues.hidden=true;return}
+    cv('cvPreviewName').textContent=item.kind==='sheet'?`${item.file.name} / ${item.name}`:item.name;
+    let totalPages=Math.max(1,Math.ceil(item.rows.length/cvState.previewSize));cvState.previewPage=Math.max(0,Math.min(totalPages-1,cvState.previewPage));
+    let start=cvState.previewPage*cvState.previewSize,end=Math.min(item.rows.length,start+cvState.previewSize),pageRows=item.rows.slice(start,end),correctionTitle=(item.correctionDetails||[]).join('；');
+    info.innerHTML=`<span class="cvTag">${item.channels.length} 通道</span><span class="cvTag">${formatNumber(item.dataCount)} 行</span>${item.corrections?`<span class="cvTag correction" title="${esc(correctionTitle)}">自动纠正通道名 ${item.corrections} 处</span>`:''}${item.issueCount?`<span class="cvTag warning" title="无法完整解析、通道重复或缺少通道值的数据行">${item.issueCount} 行需检查</span>`:''}${item.valid?`<span class="cvPreviewRange">${formatNumber(start+1)}–${formatNumber(end)} 行</span><span class="cvPager"><button id="cvPrevPage" type="button" ${cvState.previewPage===0?'disabled':''}>上一页</button><span>${cvState.previewPage+1} / ${totalPages}</span><button id="cvNextPage" type="button" ${cvState.previewPage>=totalPages-1?'disabled':''}>下一页</button><select id="cvPreviewSize" title="每页显示行数"><option value="50" ${cvState.previewSize===50?'selected':''}>50 行/页</option><option value="100" ${cvState.previewSize===100?'selected':''}>100 行/页</option><option value="250" ${cvState.previewSize===250?'selected':''}>250 行/页</option></select></span>`:''}`;
+    if(!item.valid){box.innerHTML='<div class="cvPreviewEmpty">该项目没有可转换的数据</div>'}else{
+      box.innerHTML=`<table class="cvTable cvDataTable"><thead><tr><th>#</th>${item.channels.map(ch=>`<th>${esc(ch)}</th>`).join('')}</tr></thead><tbody>${pageRows.map((row,i)=>`<tr><td>${start+i+1}</td>${row.map(v=>`<td>${isFinite(v)?formatNumber(Math.round(v)):'--'}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      let prev=cv('cvPrevPage'),next=cv('cvNextPage'),size=cv('cvPreviewSize');if(prev)prev.onclick=()=>{cvState.previewPage--;renderPreview();box.scrollTop=0};if(next)next.onclick=()=>{cvState.previewPage++;renderPreview();box.scrollTop=0};if(size)size.onchange=()=>{let first=start;cvState.previewSize=Number(size.value);cvState.previewPage=Math.floor(first/cvState.previewSize);renderPreview();box.scrollTop=0}
+    }
+    let correctionNotes=(item.correctionDetails||[]).slice(0,8),notes=[];if(item.ignored?.length)notes.push(`已忽略非通道列：${item.ignored.slice(0,8).join('、')}`);notes.push(...item.issues.slice(0,8));
+    issues.hidden=!correctionNotes.length&&!notes.length;issues.innerHTML=correctionNotes.map(x=>`<div class="correction">✓ ${esc(x)}</div>`).join('')+notes.map(x=>`<div>• ${esc(x)}</div>`).join('')+((item.correctionDetails?.length||0)>8||item.issues.length>8?'<div>还有更多提示未展开</div>':'')
+  }
+  function renderSummary(){let selected=selectedItems(),rows=selected.reduce((n,x)=>n+x.dataCount,0),problems=selected.reduce((n,x)=>n+x.issueCount,0);cv('cvMetricFiles').textContent=formatNumber(selected.length);cv('cvMetricRows').textContent=formatNumber(rows);cv('cvMetricIssues').textContent=formatNumber(problems);cv('cvMetricFilesLabel').textContent=cvState.direction==='txt-xlsx'?'文件':'工作表';cv('cvConvert').disabled=!selected.length||cvState.busy;let current=currentItems().find(x=>x.id===cvState.currentId);cv('cvLoadEditor').disabled=!current?.valid||cvState.busy}
+  function renderConverter(){let reverse=cvState.direction==='xlsx-txt';cv('cvDropTitle').textContent=reverse?'拖入 Excel 文件':'拖入 TXT 文件';cv('cvDropHint').textContent=reverse?'支持 .xlsx，可一次添加多个工作簿':'支持一次添加多个文件，也可以点击选择';cv('cvFileInput').accept=reverse?'.xlsx':'.txt';cv('cvOutputGroup').hidden=reverse;cv('cvReverseGroup').hidden=!reverse;document.querySelectorAll('[data-direction]').forEach(b=>{let active=b.dataset.direction===cvState.direction;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});renderList();renderPreview();renderSummary()}
+  function genericSheetXml(headers,rows){let head='<row r="1">'+headers.map((h,i)=>`<c r="${colName(i)}1" t="inlineStr" s="1"><is><t>${esc(h)}</t></is></c>`).join('')+'</row>',body=rows.map((row,r)=>`<row r="${r+2}">${row.map((v,i)=>isFinite(v)?`<c r="${colName(i)}${r+2}"><v>${Math.round(v)}</v></c>`:'').join('')}</row>`).join(''),cols=headers.map((_,i)=>`<col min="${i+1}" max="${i+1}" width="14" customWidth="1"/>`).join('');return `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${cols}</cols><sheetData>${head}${body}</sheetData></worksheet>`}
+  function workbookStyles(){return '<?xml version="1.0" encoding="UTF-8"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Times New Roman"/></font><font><b/><sz val="11"/><name val="Times New Roman"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFD9E1F2"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="0"/><tableStyles count="0" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16"/></styleSheet>'}
+  function converterSheetName(name){let illegal='\\/*?:[]',clean=[...String(name||'Sheet')].map(ch=>illegal.includes(ch)?'_':ch).join('').slice(0,31);return clean||'Sheet'}
+  function uniqueNames(names){let used=new Set();return names.map(name=>{let base=converterSheetName(name),next=base,n=1;while(used.has(next.toLowerCase())){let suffix='_'+n++;next=base.slice(0,31-suffix.length)+suffix}used.add(next.toLowerCase());return next})}
+  async function makeWorkbook(sheets){let names=uniqueNames(sheets.map(s=>s.name)),contentTypes='<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')+'</Types>',workbook=`<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${names.map((name,i)=>`<sheet name="${esc(name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`,rels=`<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`,entries=[{name:'[Content_Types].xml',data:contentTypes},{name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},{name:'xl/workbook.xml',data:workbook},{name:'xl/_rels/workbook.xml.rels',data:rels},{name:'xl/styles.xml',data:workbookStyles()}];sheets.forEach((sheet,i)=>entries.push({name:`xl/worksheets/sheet${i+1}.xml`,data:genericSheetXml(sheet.headers,sheet.rows)}));return await zip(entries)}
+  function uniqueFileNames(names,ext){let used=new Set();return names.map(name=>{let base=safeFileName(name)||'data',next=base,n=1;while(used.has((next+ext).toLowerCase()))next=base+'_'+n++;used.add((next+ext).toLowerCase());return next+ext})}
+  async function convertTxtToExcel(items){let sheets=items.map(item=>({name:baseName(item.name),headers:item.channels,rows:item.rows}));if(cvState.output==='merged'){let blob=await makeWorkbook(sheets),name=items.length===1?safeFileName(baseName(items[0].name))+'.xlsx':'converted_data.xlsx';downloadBlob(blob,name);return}let names=uniqueFileNames(items.map(x=>baseName(x.name)),'.xlsx');if(items.length===1){downloadBlob(await makeWorkbook([sheets[0]]),names[0]);return}let entries=[];for(let i=0;i<items.length;i++){let blob=await makeWorkbook([sheets[i]]);entries.push({name:names[i],data:new Uint8Array(await blob.arrayBuffer())})}let packed=await zip(entries);downloadBlob(new Blob([packed],{type:'application/zip'}),'converted_excel_files.zip')}
+  async function convertExcelToTxt(items){let names=uniqueFileNames(items.map(x=>x.name),'.txt'),contents=items.map(item=>item.rows.map(row=>item.channels.map((ch,i)=>isFinite(row[i])?`${ch} = ${Math.round(row[i])}`:'').filter(Boolean).join(', ')).filter(Boolean).join('\r\n'));if(items.length===1){downloadBlob(new Blob(['\uFEFF'+contents[0]],{type:'text/plain;charset=utf-8'}),names[0]);return}let enc=new TextEncoder(),entries=contents.map((text,i)=>({name:names[i],data:enc.encode('\uFEFF'+text)})),packed=await zip(entries);downloadBlob(new Blob([packed],{type:'application/zip'}),'converted_txt_files.zip')}
+  async function runConversion(){let items=selectedItems();if(!items.length)return cvToast('请先选择可转换的数据');cvState.busy=true;renderSummary();cv('cvConvert').textContent='正在生成...';cv('cvStatus').textContent='正在生成下载文件，请稍候...';try{if(cvState.direction==='txt-xlsx')await convertTxtToExcel(items);else await convertExcelToTxt(items);cvToast('转换完成，文件已开始下载');cv('cvStatus').textContent=`转换完成：${items.length} ${cvState.direction==='txt-xlsx'?'个文件':'个工作表'}`}catch(error){console.error(error);cvToast('转换失败：'+(error.message||error));cv('cvStatus').textContent='转换失败，请检查需检查行的具体说明'}finally{cvState.busy=false;cv('cvConvert').textContent='转换并下载';renderSummary()}}
+  function switchTool(tool){let converter=tool==='converter';if(!converter&&state.dirty&&!confirmDiscard())return;document.body.classList.toggle('converter-mode',converter);document.body.dataset.currentTool=tool;document.title=converter?'ResiScope - 数据转换':'ResiScope';document.querySelectorAll('button[data-tool]').forEach(b=>{let active=b.dataset.tool===tool;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))});if(typeof syncViewport==='function')setTimeout(()=>syncViewport(true),0);if(!converter)setTimeout(()=>{resize();draw()},0)}
+  function loadCurrentIntoEditor(){
+    let item=currentItems().find(x=>x.id===cvState.currentId);if(!item?.valid)return cvToast('请先选择可载入的数据');
+    try{
+      if(item.kind==='txt'){
+        let name=baseName(item.name);useRows([item.channels,...item.rows],item.name,name,0);wb=null;cv('sheet').innerHTML=`<option value="0">${esc(name)}</option>`
+      }else{
+        useRows(sheetRows(item.book,item.sheetIndex),item.file.name,item.name,item.sheetIndex);wb=item.book;cv('sheet').innerHTML=item.book.sheets.map((sheet,index)=>`<option value="${index}">${esc(sheet.name)}</option>`).join('');cv('sheet').value=String(item.sheetIndex)
+      }
+      let picked=cv('pickedName');if(picked)picked.textContent=item.file?.name||item.name;switchTool('editor');toast('数据已载入曲线编辑器')
+    }catch(error){console.error(error);cvToast('载入失败：'+(error.message||error))}
+  }
+  function clearCurrent(){if(cvState.direction==='txt-xlsx')cvState.txtItems=[];else cvState.excelItems=[];cvState.currentId=null;cvState.previewPage=0;renderConverter()}
+  const globalAbout=cv('aboutModal');
+  if(globalAbout)document.body.append(globalAbout);
+  function openAbout(){if(!globalAbout)return;globalAbout.classList.add('show');let box=globalAbout.querySelector('.modalBox');if(box)box.scrollTop=0;requestAnimationFrame(()=>cv('aboutClose')?.focus())}
+  document.addEventListener('keydown',event=>{let key=event.key.toLowerCase(),command=event.ctrlKey||event.metaKey;if(event.key==='F1'){event.preventDefault();event.stopImmediatePropagation();openAbout();return}if(command&&key==='o'&&document.body.classList.contains('converter-mode')){event.preventDefault();event.stopImmediatePropagation();cv('cvFileInput')?.click()}},true);
+  let sharedHeader=document.createElement('header');sharedHeader.id='sharedHeader';
+  let sharedBrand=document.createElement('div');sharedBrand.className='sharedBrand';let editorBrand=document.querySelector('.app .brandBlock');if(editorBrand)sharedBrand.append(editorBrand);
+  let sharedSwitch=document.createElement('div');sharedSwitch.className='sharedToolSwitch';sharedSwitch.setAttribute('role','group');sharedSwitch.setAttribute('aria-label','工具切换');sharedSwitch.innerHTML='<button type="button" class="active" data-tool="editor" aria-pressed="true">曲线编辑</button><button type="button" data-tool="converter" aria-pressed="false">数据转换</button>';
+  let sharedContext=document.createElement('div');sharedContext.className='sharedContextHost';
+  let editorContext=document.createElement('div');editorContext.className='sharedContext sharedEditorContext';let fileBar=document.querySelector('.topFileBar');if(fileBar)editorContext.append(fileBar);
+  let converterContext=document.createElement('div');converterContext.className='sharedContext sharedConverterContext';let directionSwitch=document.querySelector('.directionSwitch');if(directionSwitch)converterContext.append(directionSwitch);sharedContext.append(editorContext,converterContext);
+  let sharedActions=document.createElement('div');sharedActions.className='sharedActionHost';let editorActions=document.createElement('div');editorActions.className='sharedActions sharedEditorActions';let topActions=document.querySelector('.topActions');let sharedAbout=cv('aboutBtn');if(sharedAbout)sharedAbout.remove();if(topActions)editorActions.append(topActions);let converterActions=document.createElement('div');converterActions.className='sharedActions sharedConverterActions';sharedActions.append(editorActions,converterActions);
+  if(!sharedAbout){sharedAbout=document.createElement('button');sharedAbout.type='button';sharedAbout.innerHTML='<svg class="uiIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg><span>关于</span>'}sharedAbout.id='sharedAboutBtn';sharedAbout.className='sharedAbout withIcon';sharedAbout.title='关于 ResiScope（F1）';sharedAbout.setAttribute('aria-label','关于 ResiScope');sharedAbout.onclick=openAbout;
+  let headerUtilities=document.createElement('div');headerUtilities.className='headerUtilities';headerUtilities.append(sharedAbout);initThemePicker(headerUtilities);
+  sharedHeader.append(sharedBrand,sharedSwitch,sharedContext,sharedActions,headerUtilities);document.body.prepend(sharedHeader);document.querySelector('.app')?.classList.add('sharedShell');document.body.dataset.currentTool='editor';
+  document.querySelectorAll('button[data-tool]').forEach(button=>button.addEventListener('click',()=>switchTool(button.dataset.tool)));
+  document.querySelectorAll('[data-direction]').forEach(button=>button.addEventListener('click',()=>{cvState.direction=button.dataset.direction;cvState.previewPage=0;let items=currentItems();cvState.currentId=items[0]?.id||null;renderConverter()}));
+  cv('cvMerge').onclick=()=>{cvState.output='merged';cv('cvMerge').classList.add('active');cv('cvMerge').setAttribute('aria-pressed','true');cv('cvIndividual').classList.remove('active');cv('cvIndividual').setAttribute('aria-pressed','false');cv('cvOutputHint').textContent='每个 TXT 对应一个工作表；文件名自动作为 Sheet 名称。'};
+  cv('cvIndividual').onclick=()=>{cvState.output='individual';cv('cvIndividual').classList.add('active');cv('cvIndividual').setAttribute('aria-pressed','true');cv('cvMerge').classList.remove('active');cv('cvMerge').setAttribute('aria-pressed','false');cv('cvOutputHint').textContent='每个 TXT 生成一个 Excel；多个结果自动打包为 ZIP。'};
+  cv('cvChoose').onclick=e=>{e.stopPropagation();cv('cvFileInput').click()};cv('cvDrop').onclick=e=>{if(e.target!==cv('cvChoose'))cv('cvFileInput').click()};cv('cvDrop').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();cv('cvFileInput').click()}};cv('cvFileInput').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+  cv('cvSelectAll').onclick=()=>{let valid=currentItems().filter(x=>x.valid),all=valid.length&&valid.every(x=>x.selected);valid.forEach(x=>x.selected=!all);renderConverter()};cv('cvRemove').onclick=()=>{if(cvState.direction==='txt-xlsx')cvState.txtItems=cvState.txtItems.filter(x=>!x.selected);else cvState.excelItems=cvState.excelItems.filter(x=>!x.selected);let items=currentItems();cvState.currentId=items[0]?.id||null;renderConverter()};cv('cvClear').onclick=clearCurrent;cv('cvConvert').onclick=runConversion;cv('cvLoadEditor').onclick=loadCurrentIntoEditor;
+  ['dragenter','dragover','dragleave','drop'].forEach(type=>document.addEventListener(type,e=>{if(!document.body.classList.contains('converter-mode'))return;e.preventDefault();e.stopImmediatePropagation();if(type==='dragenter'||type==='dragover')cv('cvDrop').classList.add('over');else cv('cvDrop').classList.remove('over');if(type==='drop'&&e.dataTransfer?.files?.length)addFiles(e.dataTransfer.files)},true));
+  document.addEventListener('keydown',e=>{if(!document.body.classList.contains('converter-mode'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='o'){e.preventDefault();cv('cvFileInput').click()}},true);
+  renderConverter();if(location.hash==='#converter')switchTool('converter');
+})();
+</script>
+<div id="staticToolRail" class="toolIconRail" aria-label="数据处理工具">
+  <button type="button" class="toolIconButton" data-static-panel="selectionGroup" title="框选区间" aria-label="框选区间"><svg class="uiIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h5M4 4v5M20 20h-5M20 20v-5"></path><path d="M9 4h6M4 9v6M20 9v6M9 20h6"></path></svg><span>框选区间</span></button>
+  <button type="button" class="toolIconButton" data-static-panel="operationGroup" title="公式处理" aria-label="公式处理"><svg class="uiIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5h12M6 19h12M8 5l8 14M16 5 8 19"></path></svg><span>公式处理</span></button>
+  <button type="button" class="toolIconButton" data-static-panel="timeAdjustGroup" title="时间伸缩" aria-label="时间伸缩"><svg class="uiIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 17h16M8 4 4 7l4 3M16 14l4 3-4 3"></path></svg><span>时间伸缩</span></button>
+  <button type="button" class="toolIconButton" data-static-panel="filterGroup" title="滤波" aria-label="滤波"><svg class="uiIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18l-7 8v5l-4 2v-7L3 5Z"></path></svg><span>滤波</span></button>
+</div>
+<script>
+(()=>{const rail=document.getElementById('staticToolRail'),drawer=document.getElementById('toolDrawer');if(!rail)return;document.querySelectorAll('.toolIconRail:not(#staticToolRail)').forEach(el=>el.remove());if(!drawer)return;const title=drawer.querySelector('.toolDrawerHead strong'),close=drawer.querySelector('.toolDrawerClose'),buttons=[...rail.querySelectorAll('[data-static-panel]')];buttons.forEach(button=>button.onclick=()=>{const id=button.dataset.staticPanel,group=document.getElementById(id),same=drawer.classList.contains('open')&&button.classList.contains('active');if(same){drawer.classList.remove('open');button.classList.remove('active');return}document.querySelectorAll('#toolDrawer .group').forEach(el=>el.hidden=el.id!==id);buttons.forEach(el=>el.classList.toggle('active',el===button));if(title)title.textContent=button.title;drawer.classList.add('open')});if(close)close.onclick=()=>{drawer.classList.remove('open');buttons.forEach(el=>el.classList.remove('active'))}})();
+</script>
+<script>
+(()=>{const side=document.querySelector('.side'),channelGroup=side?.querySelector('.channelGroup'),rail=document.getElementById('staticToolRail'),drawer=document.getElementById('toolDrawer');if(side&&channelGroup&&rail){channelGroup.after(rail);if(drawer)rail.after(drawer)}})();
+</script>
+<script>
+(()=>{
+  if(typeof state==='undefined'||typeof C==='undefined')return;
+  state.selectionMode=false;
+  window.resiSetSelectionMode=enabled=>{state.selectionMode=!!enabled;C.classList.toggle('selectionMode',state.selectionMode);C.style.cursor=state.selectionMode?'crosshair':'grab'};
+  let zoomDrag=null;
+  C.addEventListener('mousedown',event=>{
+    if(state.selectionMode||!state.channels.length)return;
+    const p=plotBox(),rect=C.getBoundingClientRect(),x=(event.clientX-rect.left)*p.d,y=(event.clientY-rect.top)*p.d;
+    if(x<p.l||x>p.r||y<p.t||y>p.b)return;
+    zoomDrag={x:event.clientX,y:event.clientY,x0:state.x0,x1:state.x1,yr:state.yr?[...state.yr]:yRange()};
+    event.preventDefault();event.stopImmediatePropagation();
+  },true);
+  document.addEventListener('mousemove',event=>{
+    if(!zoomDrag)return;
+    const p=plotBox(),dx=(event.clientX-zoomDrag.x)*p.d,dy=(event.clientY-zoomDrag.y)*p.d,xSpan=zoomDrag.x1-zoomDrag.x0,ySpan=zoomDrag.yr[1]-zoomDrag.yr[0],fx=Math.exp(dx/260),fy=Math.exp(-dy/260),xc=(zoomDrag.x0+zoomDrag.x1)/2,yc=(zoomDrag.yr[0]+zoomDrag.yr[1])/2;
+    state.x0=xc-xSpan*fx/2;state.x1=xc+xSpan*fx/2;state.yr=[yc-ySpan*fy/2,yc+ySpan*fy/2];limitView();draw();event.preventDefault();
+  },true);
+  document.addEventListener('mouseup',event=>{if(!zoomDrag)return;zoomDrag=null;event.preventDefault()},true);
+  function zoomWithWheel(event){
+    event.preventDefault();
+    if(!state.channels.length||!event.deltaY)return;
+    const factor=event.deltaY<0?0.82:1/0.82;
+    const centerX=state.x0+(state.x1-state.x0)/2,yr=yRange(),centerY=yr[0]+(yr[1]-yr[0])/2;
+    const halfX=(state.x1-state.x0)*factor/2,halfY=(yr[1]-yr[0])*factor/2;
+    const nextY=[centerY-halfY,centerY+halfY];
+    if(nextY.every(Number.isFinite)&&nextY[1]>nextY[0])state.yr=nextY;
+    state.x0=centerX-halfX;state.x1=centerX+halfX;
+    limitView();draw();
+  }
+  C.addEventListener('wheel',zoomWithWheel,{passive:false});
+  document.querySelectorAll('#staticToolRail [data-static-panel]').forEach(button=>button.addEventListener('click',()=>window.resiSetSelectionMode?.(button.dataset.staticPanel==='selectionGroup')));
+  document.querySelector('#toolDrawer .toolDrawerClose')?.addEventListener('click',()=>window.resiSetSelectionMode?.(false));
+})();
+</script>
+<script>
+(()=>{
+  const wrap=document.querySelector('.plotWrap');if(!wrap||typeof state==='undefined')return;
+  const bar=document.createElement('input');bar.type='range';bar.id='timeScrollbar';bar.className='timeScrollbar';bar.min='0';bar.max='10000';bar.value='0';bar.step='1';bar.title='拖动滑块平移时间视图';bar.disabled=true;wrap.append(bar);
+  function sync(){if(!state.x?.length){bar.disabled=true;return}bar.disabled=false;const fullMin=state.x[0],fullMax=state.x.at(-1),fullSpan=Math.max(fullMax-fullMin,1e-9),viewSpan=Math.max(state.x1-state.x0,1e-9),available=Math.max(fullSpan-viewSpan,0);bar.value=available?String(Math.round((state.x0-fullMin)/available*10000)):'0'}
+  bar.oninput=()=>{if(!state.x.length)return;const fullMin=state.x[0],fullMax=state.x.at(-1),fullSpan=Math.max(fullMax-fullMin,1e-9),viewSpan=Math.max(state.x1-state.x0,1e-9),available=Math.max(fullSpan-viewSpan,0),start=fullMin+available*(Number(bar.value)/10000);state.x0=start;state.x1=start+viewSpan;limitView();draw()};
+  C.addEventListener('mousemove',sync,true);C.addEventListener('wheel',()=>queueMicrotask(sync),true);window.addEventListener('resize',sync);sync();
+})();
+</script>
+</body></html>
+
+
+
+
+
+
+
+
+
+
+
+
